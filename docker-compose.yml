@@ -1,0 +1,95 @@
+services:
+  # ─── PostgreSQL 16 ─────────────────────────────────────────────────────── #
+  postgres:
+    image: postgres:16-alpine
+    container_name: edusocrates-postgres
+    environment:
+      POSTGRES_DB: edusocrates_dev
+      POSTGRES_USER: edusocrates
+      POSTGRES_PASSWORD: socrates_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edusocrates -d edusocrates_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis 7 ────────────────────────────────────────────────────────────── #
+  redis:
+    image: redis:7-alpine
+    container_name: edusocrates-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ─── Python FastAPI AI Gateway ──────────────────────────────────────────── #
+  ai-gateway:
+    build:
+      context: ./services/ai-gateway
+      dockerfile: Dockerfile
+    container_name: edusocrates-ai-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      DEFAULT_PROVIDER: ${DEFAULT_PROVIDER:-mock}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LLM_TEMPERATURE: "0.3"
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── NestJS API Gateway ─────────────────────────────────────────────────── #
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: edusocrates-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://edusocrates:socrates_password@postgres:5432/edusocrates_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super-secret-edusocrates-jwt-key-change-in-prod
+      JWT_EXPIRES_IN: 1d
+      API_PORT: "3000"
+      AI_GATEWAY_URL: http://ai-gateway:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai-gateway:
+        condition: service_started
+
+  # ─── Next.js Web Frontend ───────────────────────────────────────────────── #
+  web:
+    build:
+      context: ./services/web
+      dockerfile: Dockerfile
+    container_name: edusocrates-web
+    ports:
+      - "3001:3001"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+      PORT: "3001"
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:

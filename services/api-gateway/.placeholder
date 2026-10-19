@@ -1,0 +1,4 @@
+// NestJS API Gateway main source files
+// These will be placed into services/api-gateway/src/ once scaffold completes.
+// This file is a placeholder — actual source is built after NestJS init.
+
