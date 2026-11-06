@@ -1,5 +1,12 @@
 // API client — calls the NestJS API Gateway
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+function getApiBase(): string {
+  let url = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1').trim().replace(/\/+$/, '');
+  if (!url.endsWith('/api/v1')) {
+    url = `${url}/api/v1`;
+  }
+  return url;
+}
+const API_BASE = getApiBase();
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
