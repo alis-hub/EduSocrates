@@ -60,7 +60,8 @@ let AiProxyService = class AiProxyService {
         this.db = db;
         this.config = config;
         this.redisService = redisService;
-        this.aiGatewayUrl = config.get('AI_GATEWAY_URL', 'http://localhost:8000');
+        const rawUrl = (config.get('AI_GATEWAY_URL') || 'http://localhost:8000').trim().replace(/\/+$/, '');
+        this.aiGatewayUrl = rawUrl;
     }
     async startSession(user, courseworkId) {
         const rows = await this.db.queryWithTenant(user.schoolId, `SELECT cw.*, sub.name as subject_name, sub.id as subject_id
@@ -84,13 +85,22 @@ let AiProxyService = class AiProxyService {
             ai_guidance_mode: cw.ai_guidance_mode,
             teacher_guidance: cw.rubric ?? '',
         };
-        const response = await fetch(`${this.aiGatewayUrl}/api/v1/ai/session/start`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
+        let response;
+        try {
+            response = await fetch(`${this.aiGatewayUrl}/api/v1/ai/session/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+        }
+        catch (err) {
+            console.error('[ai-proxy] Network error reaching AI Gateway at', this.aiGatewayUrl, err);
+            throw new common_1.HttpException(`Unable to reach AI Gateway (${this.aiGatewayUrl}): ${err.message || 'connection failed'}`, common_1.HttpStatus.BAD_GATEWAY);
+        }
         if (!response.ok) {
-            throw new common_1.HttpException('AI gateway session start failed', common_1.HttpStatus.BAD_GATEWAY);
+            const errText = await response.text().catch(() => '');
+            console.error('[ai-proxy] AI gateway session start failed:', response.status, errText);
+            throw new common_1.HttpException(`AI gateway session start failed (${response.status}): ${errText || response.statusText}`, common_1.HttpStatus.BAD_GATEWAY);
         }
         const data = await response.json();
         await this.db.queryWithTenant(user.schoolId, `INSERT INTO ai_tutoring_sessions

@@ -18,7 +18,8 @@ export class AiProxyService {
     private readonly config: ConfigService,
     private readonly redisService: RedisService,
   ) {
-    this.aiGatewayUrl = config.get<string>('AI_GATEWAY_URL', 'http://localhost:8000');
+    const rawUrl = (config.get<string>('AI_GATEWAY_URL') || 'http://localhost:8000').trim().replace(/\/+$/, '');
+    this.aiGatewayUrl = rawUrl;
   }
 
   async startSession(user: any, courseworkId: string) {
@@ -51,14 +52,28 @@ export class AiProxyService {
       teacher_guidance: cw.rubric ?? '',  // Rubric injected as teacher_guidance
     };
 
-    const response = await fetch(`${this.aiGatewayUrl}/api/v1/ai/session/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    let response: globalThis.Response;
+    try {
+      response = await fetch(`${this.aiGatewayUrl}/api/v1/ai/session/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (err: any) {
+      console.error('[ai-proxy] Network error reaching AI Gateway at', this.aiGatewayUrl, err);
+      throw new HttpException(
+        `Unable to reach AI Gateway (${this.aiGatewayUrl}): ${err.message || 'connection failed'}`,
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
 
     if (!response.ok) {
-      throw new HttpException('AI gateway session start failed', HttpStatus.BAD_GATEWAY);
+      const errText = await response.text().catch(() => '');
+      console.error('[ai-proxy] AI gateway session start failed:', response.status, errText);
+      throw new HttpException(
+        `AI gateway session start failed (${response.status}): ${errText || response.statusText}`,
+        HttpStatus.BAD_GATEWAY,
+      );
     }
 
     const data = await response.json() as { session_id: string };
