@@ -38,7 +38,7 @@ services:
       dockerfile: Dockerfile
     container_name: edusocrates-ai-gateway
     ports:
-      - "8000:8000"
+      - "8008:8000"
     environment:
       DEFAULT_PROVIDER: ${DEFAULT_PROVIDER:-mock}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
