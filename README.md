@@ -81,6 +81,21 @@ npm run dev
 
 ---
 
+## Deploying the Web Frontend on Vercel
+
+In the Vercel project settings, set **Root Directory** to `services/web` and
+select the **Next.js** framework preset. Redeploy after changing these settings.
+The repository root is not the Next.js application.
+
+The Vercel deployment only hosts the frontend. Deploy the API gateway, AI
+gateway, PostgreSQL, and Redis separately. Set `NEXT_PUBLIC_API_URL` in the
+Vercel project's production environment to the public HTTPS URL of the API
+gateway, including `/api/v1` (for example, `https://api.example.com/api/v1`),
+and redeploy so the value is included in the frontend build. The localhost
+default is only suitable for local development.
+
+---
+
 ## Demo Accounts
 
 | Role | Email | Password |
@@ -185,4 +200,3 @@ CREATE POLICY tenant_isolation ON coursework
 ```
 
 Tenant A data is completely invisible to Tenant B users — enforced at the database layer.
-
