@@ -17,7 +17,7 @@ exports.CourseworkModule = CourseworkModule;
 exports.CourseworkModule = CourseworkModule = __decorate([
     (0, common_1.Module)({
         imports: [database_module_1.DatabaseModule],
-        controllers: [coursework_controller_1.CourseworkController],
+        controllers: [coursework_controller_1.CourseworkController, coursework_controller_1.PublicCourseworkController],
         providers: [coursework_service_1.CourseworkService],
     })
 ], CourseworkModule);

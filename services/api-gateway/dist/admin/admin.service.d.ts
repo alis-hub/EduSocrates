@@ -67,6 +67,14 @@ export declare class AdminService {
     deleteParentAssociation(schoolId: string, id: string): Promise<{
         deleted: boolean;
     }>;
+    getInvites(schoolId: string): Promise<any[]>;
+    createInvite(schoolId: string, createdBy: string, dto: {
+        campusId?: string;
+        sectionId?: string;
+        targetRole?: string;
+        maxUses?: number;
+        customCode?: string;
+    }): Promise<any>;
     getDashboardStats(schoolId: string): Promise<{
         campuses: any;
         classes: any;

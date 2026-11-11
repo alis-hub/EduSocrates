@@ -35,4 +35,6 @@ export declare class SuperAdminService {
             created_at: any;
         }[];
     }>;
+    getSchoolLeads(): Promise<any[]>;
+    updateLeadStatus(id: string, status: string): Promise<any>;
 }

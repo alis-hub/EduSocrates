@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
 import { api, getStoredUser, logout } from '@/lib/api';
 import SocraticChatStream from '@/components/SocraticChatStream';
-import { BookOpen, Clock, CheckCircle2, MessageSquare, Upload, LogOut, ChevronRight, X, Filter, Timer } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle2, MessageSquare, Upload, LogOut, ChevronRight, X, Filter, Timer, Compass, Layers, PenTool } from 'lucide-react';
 
 interface Coursework {
   id: string;
@@ -209,6 +210,9 @@ export default function StudentDashboard() {
             </div>
           )}
           <span className="text-sm text-gray-600">{user?.firstName} {user?.lastName}</span>
+          <Link href="/hub" className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg">
+            <Compass className="w-3.5 h-3.5" /> Public Hub
+          </Link>
           <button onClick={logout} className="text-gray-400 hover:text-red-500">
             <LogOut className="w-4 h-4" />
           </button>
@@ -346,11 +350,41 @@ export default function StudentDashboard() {
           {/* AI Tutor button */}
           {selected.ai_guidance_mode !== 'DISABLED' && !selected.submission_status && (
             <button onClick={startAiChat}
-              className="w-full mb-6 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors">
+              className="w-full mb-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors">
               <MessageSquare className="w-4 h-4" />
               Open Socratic AI Tutor
             </button>
           )}
+
+          {/* Companion Study Tools */}
+          <div className="grid sm:grid-cols-2 gap-3 mb-6">
+            <Link
+              href="/hub"
+              className="flex items-center justify-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-medium py-2.5 px-4 rounded-xl text-sm transition-colors"
+            >
+              <Layers className="w-4 h-4" /> Study Flashcards &amp; Practice Quizzes
+            </Link>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const existing = await api.hub.getWhiteboardRooms(selected.id);
+                  if (existing.rooms?.length > 0) {
+                    window.location.href = `/whiteboard/${existing.rooms[0].id}`;
+                  } else {
+                    const created = await api.hub.createWhiteboardRoom({
+                      title: `${selected.title} Peer Board`,
+                      courseworkId: selected.id,
+                    });
+                    window.location.href = `/whiteboard/${created.room.id}`;
+                  }
+                } catch {}
+              }}
+              className="flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium py-2.5 px-4 rounded-xl text-sm transition-colors"
+            >
+              <PenTool className="w-4 h-4" /> Open Collaborative Whiteboard
+            </button>
+          </div>
 
           {/* Submit form */}
           <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">

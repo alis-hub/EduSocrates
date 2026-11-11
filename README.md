@@ -1,6 +1,104 @@
-# EduSocrates — Multi-Tenant Educational Platform with Socratic AI Guidance
+# EduSocrates — Multi-Tenant Educational Platform & Public Socratic Learning Hub
 
-Enterprise-grade academic management system with a defense-in-depth Socratic AI tutoring engine. Built with **Next.js 15+**, **NestJS 11**, **Python FastAPI**, and **PostgreSQL 16 Row-Level Security**.
+Enterprise-grade academic management system with a defense-in-depth Socratic AI tutoring engine and an open Public Learning Hub. Built with **Next.js 16**, **NestJS 12**, **Python FastAPI**, and **PostgreSQL 16 Row-Level Security**.
+
+---
+
+## About EduSocrates
+
+### What is EduSocrates?
+**EduSocrates** is an intelligent educational platform designed both for **schools & districts** and for **independent self-learners worldwide**. At its core, it pairs multi-campus academic administration with a dedicated, pedagogical **Socratic AI Tutor** and a **Universal Public Learning Hub**.
+
+Unlike conventional AI tools that generate answers or write essays on demand, EduSocrates embeds the classical **Socratic Method** into every workflow. It engages learners through guided inquiry, progressive clues, thought-provoking questions, interactive math graphing, and concept-mapping checkpoints—building lasting problem-solving habits while actively preventing academic dishonesty.
+
+---
+
+### Purpose & Vision
+In the era of generative AI, classrooms face a growing dilemma: students frequently treat chatbots as instant "homework solvers," bypassing foundational thinking. At the same time, motivated independent learners lack structured, interactive guidance outside enrolled classrooms.
+
+EduSocrates addresses both needs:
+1. **Restore Active Learning**: Provide a 24/7 study coach that challenges, hints, and probes misconceptions without giving away final solutions.
+2. **Empower Institutions & Educators**: Give schools a secure, multi-tenant digital campus where coursework, rubrics, study decks, collaborative whiteboards, and AI session auditing coexist cleanly.
+3. **Open Universal Access**: Offer an instant Public Learning Hub (`/hub`), live 2-hour *"Try as a Teacher"* simulator (`/try-teacher`), and self-serve school onboarding (`/schools`), allowing learners to carry streaks, XP, and flashcards seamlessly into any school later via Invite Code.
+
+---
+
+### Who Are the Intended Users?
+
+* **🏫 School & District Administrators**: Configure campuses, academic years, classes, sections, and subjects; manage rosters (individually or via bulk CSV); and issue school Invite Codes (`/admin`).
+* **👩‍🏫 Teachers & Educators**: Publish coursework (`PRIVATE`, `UNLISTED`, or shared in the `PUBLIC_DIRECTORY`), attach grading rubrics and AI strictness rules, auto-generate editable Socratic flashcard decks from rubrics, launch collaborative assignment whiteboards, grade work, and inspect student-AI chat transcripts (`/teacher`).
+* **🎓 Enrolled School Students**: Manage deadlines, open coursework-linked Socratic tutors, collaborate on shared study whiteboards, and submit timed quizzes or assignments (`/student`).
+* **🌍 Independent & Public Learners**: Explore public flashcards, Socratic tutoring, code debugging, concept knowledge trees, practice quizzes, and STEM graphing immediately—starting anonymously for quick exploration or saving long-term streaks with a free account (`/hub`).
+* **👨‍👩‍👧 Parents & Guardians**: Monitor their children's upcoming assignments, submission status, grades, and teacher feedback in a dedicated read-only portal (`/parent`).
+* **🌐 Platform / Super Administrators**: Oversee onboarded schools, review incoming school interest leads, and monitor platform-wide AI safety metrics (`/super-admin`).
+
+---
+
+### What Can It Do?
+
+* **7-Tool Public Learning Hub (`/hub`)**:
+  1. **Socratic Subject Sandbox**: Guided discovery across *Elementary*, *High School*, and *AP/Undergrad* depths with *Guided Explanation*, *Check My Logic*, and *Toy Problem* modes.
+  2. **Socratic Code Debugger**: Helps learners locate bugs in Python, JavaScript, C++, or Java via edge-case tracing rather than handing out copy-paste fixes.
+  3. **2-Tier Socratic Flashcards (SM-2)**: Progressive 2-clue reveal cards scheduled using spaced repetition, auto-generated from either an assignment rubric or any learner-chosen topic.
+  4. **Concept Knowledge Maps**: Prerequisite topic trees where learners unlock advanced subjects by passing short Socratic conceptual checkpoints.
+  5. **Ungraded Practice Quizzes & Misconception Debriefs**: Self-diagnostic quizzes separated from school gradebooks, paired with AI explanations of *why* incorrect choices seemed tempting.
+  6. **Interactive STEM Function Grapher**: Plot and compare curves visually and send equations directly to the Socratic tutor for slope and root analysis.
+  7. **Peer Discussion Boards & Collaborative Whiteboards**: Moderated community Q&A alongside shared real-time drawing and sticky-note whiteboards (`/whiteboard/[roomId]`).
+* **Strict "Zero Direct Solutions" AI Guardrails**: Automatically detects prompt-injection attempts and direct answer requests, deflecting them into constructive guiding questions.
+* **Ephemeral *"Try as a Teacher"* Simulator (`/try-teacher`)**: Zero-signup 2-hour sandbox preloaded with sample physics coursework and simulated student test prompts so educators can test AI guardrails live.
+* **6-Step Self-Serve School Onboarding (`/schools`)**: Atomic guided setup creating a school workspace, campus, administrator login, initial class/section/subject, and student Invite Code in one workflow.
+
+---
+
+### Available Options & Modes
+
+#### 1. Per-Assignment AI Guidance Modes
+* **Socratic Strict (Default)**: Pure guided questioning using analogies and conceptual prompts; blocks equations, final answers, and spoiler code blocks.
+* **Hints Only**: Structured progressive hints capped cleanly per cycle while requiring the student to complete reasoning steps.
+* **Terminology Only**: Vocabulary and definition clarification only—ideal for quizzes and exam review.
+* **Disabled**: Turns off AI tutoring completely for independent evaluations.
+
+#### 2. Coursework Sharing Scopes
+* **Private**: Visible strictly to students enrolled in the assigned section.
+* **Unlisted**: Shareable via direct URL without appearing in public listings; private teacher notes and school submissions remain hidden.
+* **Public Directory**: Published into the Public Hub Resource Bank for learners everywhere.
+
+#### 3. Configurable AI Providers
+Supports **Google Gemini**, **OpenAI**, and a deterministic **Offline Mock Engine** for local testing or zero-cost demos.
+
+---
+
+### How It Works (The Educational Journey)
+
+```
+┌─────────────────────────┐       ┌─────────────────────────┐       ┌─────────────────────────┐
+│  1. Public Hub / Setup  │       │ 2. Coursework & Decks   │       │   3. Socratic Tutoring  │
+│ Learn freely on /hub OR │ ────▶ │ Teacher sets prompt,    │ ────▶ │ Learner explores hints, │
+│ redeem School Invite to │       │ rubric, AI strictness & │       │ flashcards, concepts, & │
+│ join a campus classroom │       │ auto-generated decks    │       │ peer whiteboards safely │
+└─────────────────────────┘       └─────────────────────────┘       └─────────────────────────┘
+                                                                                 │
+                                                                                 ▼
+┌─────────────────────────┐       ┌─────────────────────────┐       ┌─────────────────────────┐
+│   5. Parent Oversight   │       │   4. Review & Grading   │       │  3b. AI Audit Console   │
+│ Parents track grades,   │ ◀──── │ Teacher grades work &   │ ◀──── │ Teacher reviews chat    │
+│ feedback, & deadlines   │       │ returns feedback to the │       │ transcripts to identify │
+│ in real time.           │       │ student portal.         │       │ common misconceptions.  │
+└─────────────────────────┘       └─────────────────────────┘       └─────────────────────────┘
+```
+
+1. **Discover or Enroll**: Independent learners start immediately on `/hub`, while schools onboard via `/schools` or `/super-admin`. Learners joining a school later redeem an Invite Code (e.g., `HORIZON-2026`) without losing streaks or flashcards.
+2. **Design & Publish**: Teachers create assignments, define rubrics, adjust AI strictness, and optionally generate an editable 2-tier flashcard deck or open a linked whiteboard room.
+3. **Socratic Exploration**: Students and independent learners work through concepts using Socratic dialogue, code tracing, practice quizzes with misconception debriefs, and collaborative boards.
+4. **Assess & Coach**: Teachers review submissions, inspect flagged AI audit interactions, assign rubric scores, and share feedback—while parents track progress in real time.
+
+---
+
+### Summary of Benefits
+
+| For Schools & Districts | For Teachers | For Students & Self-Learners | For Parents |
+| :--- | :--- | :--- | :--- |
+| • Multi-tenant data isolation<br>• Self-serve 6-step onboarding<br>• Invite-code student funnel | • Granular AI strictness per task<br>• Auto-generated Socratic decks<br>• Live guardrail preview sandbox | • 24/7 Socratic coaching & code debug<br>• Spaced repetition, XP streaks & DAG maps<br>• Free public study bank | • Real-time deadline & grade visibility<br>• Transparent teacher feedback<br>• Academic integrity assurance |
 
 ---
 

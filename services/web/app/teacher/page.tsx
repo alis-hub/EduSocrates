@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api, getStoredUser, logout } from '@/lib/api';
 import {
   BookOpen, LogOut, PlusCircle, MessageSquare, CheckSquare2, ChevronLeft,
-  ShieldAlert, Star, FileText, Eye, X,
+  ShieldAlert, Star, FileText, Eye, X, Sparkles, Globe, PenTool,
 } from 'lucide-react';
 
 type View = 'list' | 'create' | 'audit' | 'submissions' | 'transcript';
@@ -48,7 +48,10 @@ export default function TeacherDashboard() {
     title: '', description: '', sectionId: '', subjectId: '', courseworkType: 'HOMEWORK',
     aiGuidanceMode: 'SOCRATIC_STRICT', maxScore: '100', dueDate: '',
     aiSystemNotes: '', rubric: '', timeLimitMinutes: '',
+    accessLevel: 'PRIVATE', socraticSystemPromptOverride: '',
   });
+  const [draftDeck, setDraftDeck] = useState<any>(null);
+  const [generatingDeck, setGeneratingDeck] = useState(false);
   const [previewDesc, setPreviewDesc] = useState(false);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
@@ -126,9 +129,12 @@ export default function TeacherDashboard() {
         aiSystemNotes: form.aiSystemNotes || null,
         rubric: form.rubric || null,
         timeLimitMinutes: form.timeLimitMinutes ? Number(form.timeLimitMinutes) : null,
+        accessLevel: form.accessLevel,
+        isPublic: form.accessLevel === 'PUBLIC_DIRECTORY',
+        socraticSystemPromptOverride: form.socraticSystemPromptOverride || null,
       });
       flash('Coursework published!');
-      setForm({ title: '', description: '', sectionId: '', subjectId: '', courseworkType: 'HOMEWORK', aiGuidanceMode: 'SOCRATIC_STRICT', maxScore: '100', dueDate: '', aiSystemNotes: '', rubric: '', timeLimitMinutes: '' });
+      setForm({ title: '', description: '', sectionId: '', subjectId: '', courseworkType: 'HOMEWORK', aiGuidanceMode: 'SOCRATIC_STRICT', maxScore: '100', dueDate: '', aiSystemNotes: '', rubric: '', timeLimitMinutes: '', accessLevel: 'PRIVATE', socraticSystemPromptOverride: '' });
       setPreviewDesc(false);
       const cw = await api.getTeacherCoursework().catch(() => []);
       setCoursework(cw);
@@ -302,6 +308,20 @@ export default function TeacherDashboard() {
                     <label className="text-xs font-medium text-gray-600 mb-1 block">AI Pedagogical Notes (private — injected into AI system prompt)</label>
                     <textarea rows={3} placeholder="E.g. 'Final answer is 42 J. Do not reveal. Guide students using conservation of energy.'" className={inputCls + ' resize-none'} value={form.aiSystemNotes} onChange={e => setForm(p => ({ ...p, aiSystemNotes: e.target.value }))} />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Hub Sharing / Access Level</label>
+                      <select className={inputCls} value={form.accessLevel} onChange={e => setForm(p => ({ ...p, accessLevel: e.target.value }))}>
+                        <option value="PRIVATE">PRIVATE — Assigned sections only</option>
+                        <option value="UNLISTED">UNLISTED — Share via direct URL</option>
+                        <option value="PUBLIC_DIRECTORY">PUBLIC_DIRECTORY — Listed in Public Hub</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Custom Socratic System Prompt Override (optional)</label>
+                      <input placeholder="Custom persona/style instruction" className={inputCls} value={form.socraticSystemPromptOverride} onChange={e => setForm(p => ({ ...p, socraticSystemPromptOverride: e.target.value }))} />
+                    </div>
+                  </div>
                   <button type="submit" className={btnPrimary}>Publish Coursework</button>
                 </form>
               </div>
@@ -360,13 +380,161 @@ export default function TeacherDashboard() {
         {view === 'submissions' && selectedCw && (
           <div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs bg-blue-100 text-blue-700 rounded px-1.5 py-0.5">{selectedCw.coursework_type}</span>
-                <span className="text-xs text-gray-400">{selectedCw.ai_guidance_mode}</span>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-blue-100 text-blue-700 rounded px-1.5 py-0.5">{selectedCw.coursework_type}</span>
+                  <span className="text-xs text-gray-400">{selectedCw.ai_guidance_mode}</span>
+                  <span className="text-xs bg-indigo-50 text-indigo-700 rounded px-2 py-0.5">{selectedCw.access_level || 'PRIVATE'}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={selectedCw.access_level || 'PRIVATE'}
+                    onChange={async (e) => {
+                      const nextLevel = e.target.value;
+                      try {
+                        await api.updateCourseworkVisibility(selectedCw.id, {
+                          accessLevel: nextLevel,
+                          isPublic: nextLevel === 'PUBLIC_DIRECTORY',
+                        });
+                        setSelectedCw({ ...selectedCw, access_level: nextLevel });
+                        flash(`Visibility updated to ${nextLevel}`);
+                      } catch (err: any) {
+                        flash('Error: ' + err.message);
+                      }
+                    }}
+                    className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white"
+                  >
+                    <option value="PRIVATE">Private</option>
+                    <option value="UNLISTED">Unlisted Link</option>
+                    <option value="PUBLIC_DIRECTORY">Public Hub Directory</option>
+                  </select>
+                  <button
+                    type="button"
+                    disabled={generatingDeck}
+                    onClick={async () => {
+                      setGeneratingDeck(true);
+                      try {
+                        const res = await api.hub.generateFlashcards({
+                          courseworkId: selectedCw.id,
+                          cardCount: 6,
+                          saveDeck: false,
+                        });
+                        setDraftDeck({
+                          title: res.title,
+                          subjectArea: res.subject_area,
+                          courseworkId: selectedCw.id,
+                          isPublic: selectedCw.access_level === 'PUBLIC_DIRECTORY',
+                          cards: res.cards.map((c: any) => ({
+                            conceptTitle: c.concept_title,
+                            clueTier1: c.clue_tier_1,
+                            clueTier2: c.clue_tier_2,
+                            terminalDefinition: c.terminal_definition,
+                          })),
+                        });
+                      } catch (err: any) {
+                        flash('Error: ' + err.message);
+                      } finally {
+                        setGeneratingDeck(false);
+                      }
+                    }}
+                    className="flex items-center gap-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-medium"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {generatingDeck ? 'Generating Deck...' : 'Auto-Generate Study Deck'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const created = await api.hub.createWhiteboardRoom({
+                          title: `${selectedCw.title} Collaboration Board`,
+                          courseworkId: selectedCw.id,
+                        });
+                        window.open(`/whiteboard/${created.room.id}`, '_blank');
+                      } catch (err: any) {
+                        flash('Error: ' + err.message);
+                      }
+                    }}
+                    className="flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg font-medium"
+                  >
+                    <PenTool className="w-3.5 h-3.5" /> Whiteboard Room
+                  </button>
+                  {(selectedCw.access_level === 'PUBLIC_DIRECTORY' || selectedCw.access_level === 'UNLISTED') && (
+                    <a
+                      href={`/coursework/${selectedCw.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 text-xs text-indigo-600 hover:underline px-2 py-1"
+                    >
+                      <Globe className="w-3.5 h-3.5" /> Share URL
+                    </a>
+                  )}
+                </div>
               </div>
               <h2 className="text-lg font-semibold text-gray-900">{selectedCw.title}</h2>
               <p className="text-sm text-gray-500 mt-1">{selectedCw.description}</p>
             </div>
+
+            {draftDeck && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 mb-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-indigo-950 text-sm">Generated Study Deck Preview: {draftDeck.title}</h3>
+                    <p className="text-xs text-indigo-700">Edit clues if needed, then publish for students.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setDraftDeck(null)} className="text-xs bg-white border border-indigo-200 px-3 py-1 rounded-lg">Cancel</button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await api.hub.createDeck(draftDeck);
+                          setDraftDeck(null);
+                          flash('Study deck published to students!');
+                        } catch (err: any) {
+                          flash('Error: ' + err.message);
+                        }
+                      }}
+                      className="text-xs bg-indigo-600 text-white font-semibold px-3 py-1 rounded-lg"
+                    >
+                      Publish Deck
+                    </button>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {draftDeck.cards.map((c: any, idx: number) => (
+                    <div key={idx} className="bg-white rounded-lg p-3 border border-indigo-100 text-xs space-y-1.5">
+                      <input
+                        value={c.conceptTitle}
+                        onChange={(e) => {
+                          const next = [...draftDeck.cards];
+                          next[idx] = { ...next[idx], conceptTitle: e.target.value };
+                          setDraftDeck({ ...draftDeck, cards: next });
+                        }}
+                        className="w-full font-bold text-gray-900 border-b border-gray-100 pb-1 outline-none"
+                      />
+                      <input
+                        value={c.clueTier1}
+                        onChange={(e) => {
+                          const next = [...draftDeck.cards];
+                          next[idx] = { ...next[idx], clueTier1: e.target.value };
+                          setDraftDeck({ ...draftDeck, cards: next });
+                        }}
+                        className="w-full text-indigo-800 outline-none"
+                      />
+                      <input
+                        value={c.terminalDefinition}
+                        onChange={(e) => {
+                          const next = [...draftDeck.cards];
+                          next[idx] = { ...next[idx], terminalDefinition: e.target.value };
+                          setDraftDeck({ ...draftDeck, cards: next });
+                        }}
+                        className="w-full text-emerald-800 outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* AI Transcripts table */}
             {aiTranscripts.length > 0 && (

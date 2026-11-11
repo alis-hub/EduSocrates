@@ -12,10 +12,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DatabaseService = exports.DATABASE_POOL = void 0;
+exports.DatabaseService = exports.PUBLIC_HUB_TENANT_ID = exports.DATABASE_POOL = void 0;
 const common_1 = require("@nestjs/common");
 const pg_1 = require("pg");
 exports.DATABASE_POOL = 'DATABASE_POOL';
+exports.PUBLIC_HUB_TENANT_ID = '00000000-0000-0000-0000-000000000000';
 let DatabaseService = class DatabaseService {
     pool;
     constructor(pool) {
@@ -29,10 +30,26 @@ let DatabaseService = class DatabaseService {
         const client = await this.pool.connect();
         try {
             await client.query('BEGIN');
-            await client.query(`SET LOCAL app.current_tenant_id = '${schoolId}'`);
+            await client.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [schoolId]);
             const result = await client.query(text, params);
             await client.query('COMMIT');
             return result.rows;
+        }
+        catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        }
+        finally {
+            client.release();
+        }
+    }
+    async withTransaction(fn) {
+        const client = await this.pool.connect();
+        try {
+            await client.query('BEGIN');
+            const result = await fn(client);
+            await client.query('COMMIT');
+            return result;
         }
         catch (err) {
             await client.query('ROLLBACK');

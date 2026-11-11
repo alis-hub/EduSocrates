@@ -247,6 +247,19 @@ export class AdminController {
     return this.adminService.deleteParentAssociation(user.schoolId, id);
   }
 
+  // ── School Invite Codes ──────────────────────────────────────────────────── //
+  @Get('invites')
+  @Roles('SCHOOL_ADMIN', 'SUPER_ADMIN')
+  getInvites(@CurrentUser() user: any) {
+    return this.adminService.getInvites(user.schoolId);
+  }
+
+  @Post('invites')
+  @Roles('SCHOOL_ADMIN', 'SUPER_ADMIN')
+  createInvite(@CurrentUser() user: any, @Body() dto: any) {
+    return this.adminService.createInvite(user.schoolId, user.id, dto);
+  }
+
   // ── Dashboard Stats ──────────────────────────────────────────────────────── //
   @Get('stats')
   @Roles('SCHOOL_ADMIN', 'SUPER_ADMIN')

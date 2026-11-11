@@ -8,7 +8,17 @@ function getApiBase(): string {
 }
 const API_BASE = getApiBase();
 
-function getToken(): string | null {
+export function getApiBaseUrl(): string {
+  return API_BASE;
+}
+
+export function getWsBaseUrl(): string {
+  if (API_BASE.startsWith('https://')) return API_BASE.replace(/^https:\/\//, 'wss://');
+  if (API_BASE.startsWith('http://')) return API_BASE.replace(/^http:\/\//, 'ws://');
+  return API_BASE;
+}
+
+export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('edusocrates_token');
 }
@@ -43,6 +53,13 @@ function clearAuthCookie() {
   document.cookie = 'edusocrates_token=; path=/; max-age=0; SameSite=Lax';
 }
 
+export function setStoredAuth(accessToken: string, user: any) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('edusocrates_token', accessToken);
+  localStorage.setItem('edusocrates_user', JSON.stringify(user));
+  setAuthCookie(accessToken);
+}
+
 export const api = {
   // ── Auth ──────────────────────────────────────────────────────────────── //
   login: async (email: string, password: string) => {
@@ -50,9 +67,33 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    localStorage.setItem('edusocrates_token', res.accessToken);
-    localStorage.setItem('edusocrates_user', JSON.stringify(res.user));
-    setAuthCookie(res.accessToken);
+    setStoredAuth(res.accessToken, res.user);
+    return res;
+  },
+
+  publicSignup: async (data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }) => {
+    const res = await apiFetch<{ accessToken: string; user: any }>('/auth/public-signup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    setStoredAuth(res.accessToken, res.user);
+    return res;
+  },
+
+  redeemInvite: async (inviteCode: string) => {
+    const res = await apiFetch<{ accessToken: string; user: any; schoolName: string }>(
+      '/auth/redeem-invite',
+      {
+        method: 'POST',
+        body: JSON.stringify({ inviteCode }),
+      },
+    );
+    setStoredAuth(res.accessToken, res.user);
     return res;
   },
 
@@ -200,6 +241,198 @@ export const api = {
       }),
     getAiAudit: (limit = 100) =>
       apiFetch<any>(`/super-admin/ai-audit?limit=${limit}`),
+    getLeads: () => apiFetch<{ leads: any[] }>('/super-admin/leads'),
+    updateLeadStatus: (id: string, status: string) =>
+      apiFetch(`/super-admin/leads/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
+  },
+
+  // ── Admin Invites ─────────────────────────────────────────────────────── //
+  getAdminInvites: () => apiFetch<{ invites: any[] }>('/admin/invites'),
+  createAdminInvite: (data: {
+    inviteCode?: string;
+    sectionId?: string;
+    targetRole?: string;
+    maxUses?: number;
+  }) => apiFetch('/admin/invites', { method: 'POST', body: JSON.stringify(data) }),
+
+  // ── Teacher Visibility & Public Coursework ────────────────────────────── //
+  updateCourseworkVisibility: (
+    id: string,
+    data: { accessLevel?: string; isPublic?: boolean; socraticSystemPromptOverride?: string },
+  ) =>
+    apiFetch(`/teacher/coursework/${id}/visibility`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  getPublicCoursework: (subject?: string) => {
+    const qs = subject ? `?subject=${encodeURIComponent(subject)}` : '';
+    return apiFetch<any[]>(`/public/coursework${qs}`);
+  },
+  getPublicCourseworkById: (id: string) => apiFetch<any>(`/public/coursework/${id}`),
+
+  // ── Universal Public Learning Hub & Onboarding ────────────────────────── //
+  hub: {
+    getPublicSchools: () => apiFetch<{ schools: any[] }>('/public/schools'),
+    submitSchoolLead: (data: {
+      requesterEmail: string;
+      schoolName: string;
+      campusCity: string;
+      roleType: string;
+    }) => apiFetch('/leads/school-inquiry', { method: 'POST', body: JSON.stringify(data) }),
+    onboardingWizard: async (data: {
+      schoolName: string;
+      domain?: string;
+      adminEmail: string;
+      adminPassword: string;
+      adminFirstName: string;
+      adminLastName: string;
+      campusName: string;
+      campusCity: string;
+      className: string;
+      academicYear?: string;
+      sectionName?: string;
+      subjectName: string;
+      inviteCode?: string;
+    }) => {
+      const res = await apiFetch<{ accessToken: string; user: any; provisioned: any }>(
+        '/onboarding/wizard',
+        { method: 'POST', body: JSON.stringify(data) },
+      );
+      setStoredAuth(res.accessToken, res.user);
+      return res;
+    },
+
+    // Try-as-a-Teacher Sandbox
+    startTeacherSandbox: () => apiFetch<any>('/sandbox/teacher/start', { method: 'POST' }),
+    getTeacherSandbox: (token: string) => apiFetch<any>(`/sandbox/teacher/${token}`),
+    updateTeacherSandbox: (token: string, data: any) =>
+      apiFetch<any>(`/sandbox/teacher/${token}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+
+    // Flashcards
+    getDecks: (filters: { courseworkId?: string; subjectArea?: string } = {}) => {
+      const params = new URLSearchParams();
+      if (filters.courseworkId) params.set('courseworkId', filters.courseworkId);
+      if (filters.subjectArea) params.set('subjectArea', filters.subjectArea);
+      const qs = params.toString() ? `?${params}` : '';
+      return apiFetch<{ decks: any[] }>(`/hub/flashcards/decks${qs}`);
+    },
+    getDeckById: (deckId: string) => apiFetch<{ deck: any; cards: any[] }>(`/hub/flashcards/decks/${deckId}`),
+    generateFlashcards: (data: {
+      topic?: string;
+      subjectArea?: string;
+      courseworkId?: string;
+      assignmentTitle?: string;
+      assignmentDescription?: string;
+      rubric?: string;
+      cardCount?: number;
+      saveDeck?: boolean;
+      isPublic?: boolean;
+    }) => apiFetch<any>('/hub/flashcards/generate', { method: 'POST', body: JSON.stringify(data) }),
+    createDeck: (data: {
+      title: string;
+      subjectArea: string;
+      courseworkId?: string;
+      isPublic?: boolean;
+      cards: Array<{
+        conceptTitle: string;
+        clueTier1: string;
+        clueTier2: string;
+        terminalDefinition: string;
+      }>;
+    }) => apiFetch<any>('/hub/flashcards/decks', { method: 'POST', body: JSON.stringify(data) }),
+    reviewCard: (cardId: string, quality: number) =>
+      apiFetch<any>('/hub/flashcards/review', {
+        method: 'POST',
+        body: JSON.stringify({ cardId, quality }),
+      }),
+
+    // Concept Maps (DAG)
+    getConceptNodes: (domain?: string) => {
+      const qs = domain ? `?domain=${encodeURIComponent(domain)}` : '';
+      return apiFetch<{ nodes: any[] }>(`/hub/concepts/nodes${qs}`);
+    },
+    evaluateConcept: (nodeId: string, studentAnswer: string) =>
+      apiFetch<any>('/hub/concepts/evaluate', {
+        method: 'POST',
+        body: JSON.stringify({ nodeId, studentAnswer }),
+      }),
+
+    // Practice Quizzes
+    getQuizzes: (subject?: string) => {
+      const qs = subject ? `?subject=${encodeURIComponent(subject)}` : '';
+      return apiFetch<{ quizzes: any[] }>(`/hub/quizzes${qs}`);
+    },
+    getQuizById: (quizId: string) => apiFetch<{ quiz: any; questions: any[] }>(`/hub/quizzes/${quizId}`),
+    generateQuiz: (data: {
+      subject: string;
+      topic?: string;
+      difficultyLevel?: string;
+      questionCount?: number;
+      courseworkId?: string;
+      courseworkDescription?: string;
+    }) => apiFetch<{ quiz: any; questions: any[] }>('/hub/quizzes/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    submitQuizAttempt: (quizId: string, selectedAnswers: Record<string, number>) =>
+      apiFetch<any>(`/hub/quizzes/${quizId}/attempt`, {
+        method: 'POST',
+        body: JSON.stringify({ selectedAnswers }),
+      }),
+
+    // Discussions
+    getThreads: (subjectTag?: string) => {
+      const qs = subjectTag ? `?subjectTag=${encodeURIComponent(subjectTag)}` : '';
+      return apiFetch<{ threads: any[] }>(`/hub/discussions/threads${qs}`);
+    },
+    getThreadById: (threadId: string) =>
+      apiFetch<{ thread: any; replies: any[] }>(`/hub/discussions/threads/${threadId}`),
+    createThread: (data: {
+      title: string;
+      body: string;
+      subjectTag?: string;
+      isPublic?: boolean;
+      askAiGuide?: boolean;
+    }) => apiFetch<{ thread: any; replies: any[] }>('/hub/discussions/threads', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    createReply: (threadId: string, data: { replyBody: string; summonAiGuide?: boolean }) =>
+      apiFetch<{ reply: any; aiReply?: any }>(`/hub/discussions/threads/${threadId}/replies`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    // Whiteboards
+    getWhiteboardRooms: (courseworkId?: string) => {
+      const qs = courseworkId ? `?courseworkId=${encodeURIComponent(courseworkId)}` : '';
+      return apiFetch<{ rooms: any[] }>(`/hub/whiteboard/rooms${qs}`);
+    },
+    createWhiteboardRoom: (data: { title: string; courseworkId?: string; isPublic?: boolean }) =>
+      apiFetch<{ room: any }>('/hub/whiteboard/session/create', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    getWhiteboardRoom: (roomId: string) => apiFetch<{ room: any }>(`/hub/whiteboard/${roomId}`),
+    updateWhiteboardState: (roomId: string, canvasState: { strokes: any[]; notes: any[] }) =>
+      apiFetch<any>(`/hub/whiteboard/${roomId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ canvasState }),
+      }),
+
+    // Gamification
+    getGamificationProfile: () => apiFetch<any>('/hub/gamification/profile'),
+    recordActivity: (xpDelta = 10, badgeCode?: string) =>
+      apiFetch<any>('/hub/gamification/record-activity', {
+        method: 'POST',
+        body: JSON.stringify({ xpDelta, badgeCode }),
+      }),
   },
 };
 

@@ -65,6 +65,12 @@ let SuperAdminController = class SuperAdminController {
     getGlobalAiAudit(limit = '100') {
         return this.superAdminService.getGlobalAiAudit(parseInt(limit, 10));
     }
+    getLeads() {
+        return this.superAdminService.getSchoolLeads();
+    }
+    updateLeadStatus(id, status) {
+        return this.superAdminService.updateLeadStatus(id, status);
+    }
 };
 exports.SuperAdminController = SuperAdminController;
 __decorate([
@@ -101,6 +107,20 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], SuperAdminController.prototype, "getGlobalAiAudit", null);
+__decorate([
+    (0, common_1.Get)('leads'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], SuperAdminController.prototype, "getLeads", null);
+__decorate([
+    (0, common_1.Patch)('leads/:id/status'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], SuperAdminController.prototype, "updateLeadStatus", null);
 exports.SuperAdminController = SuperAdminController = __decorate([
     (0, common_1.Controller)('super-admin'),
     (0, common_1.UseGuards)(guards_1.JwtAuthGuard, guards_1.RolesGuard),

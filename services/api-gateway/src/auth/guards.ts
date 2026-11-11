@@ -7,6 +7,16 @@ export const ROLES_KEY = 'roles';
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {}
 
+/**
+ * Allows both anonymous visitors and authenticated users (populating req.user if JWT is valid).
+ */
+@Injectable()
+export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
+  handleRequest(_err: any, user: any) {
+    return user || null;
+  }
+}
+
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}

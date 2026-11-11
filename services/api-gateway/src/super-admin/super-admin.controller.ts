@@ -51,5 +51,16 @@ export class SuperAdminController {
   getGlobalAiAudit(@Query('limit') limit = '100') {
     return this.superAdminService.getGlobalAiAudit(parseInt(limit, 10));
   }
+
+  /** View institutional leads from the Public Learning Hub funnel. */
+  @Get('leads')
+  getLeads() {
+    return this.superAdminService.getSchoolLeads();
+  }
+
+  @Patch('leads/:id/status')
+  updateLeadStatus(@Param('id') id: string, @Body('status') status: string) {
+    return this.superAdminService.updateLeadStatus(id, status);
+  }
 }
 

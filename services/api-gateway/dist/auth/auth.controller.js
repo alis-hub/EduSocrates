@@ -16,7 +16,9 @@ exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const class_validator_1 = require("class-validator");
-const ALLOWED_REGISTER_ROLES = ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'];
+const guards_1 = require("./guards");
+const decorators_1 = require("./decorators");
+const ALLOWED_REGISTER_ROLES = ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT', 'INDEPENDENT_STUDENT'];
 class LoginDto {
     email;
     password;
@@ -30,6 +32,39 @@ __decorate([
     (0, class_validator_1.MinLength)(6),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
+class PublicSignupDto {
+    email;
+    password;
+    firstName;
+    lastName;
+}
+__decorate([
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], PublicSignupDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(6),
+    __metadata("design:type", String)
+], PublicSignupDto.prototype, "password", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], PublicSignupDto.prototype, "firstName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PublicSignupDto.prototype, "lastName", void 0);
+class RedeemInviteDto {
+    inviteCode;
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], RedeemInviteDto.prototype, "inviteCode", void 0);
 class RegisterDto {
     email;
     password;
@@ -77,6 +112,12 @@ let AuthController = class AuthController {
     login(dto) {
         return this.authService.login(dto.email, dto.password);
     }
+    publicSignup(dto) {
+        return this.authService.publicSignup(dto);
+    }
+    redeemInvite(user, dto) {
+        return this.authService.redeemInvite(user.id, dto.inviteCode);
+    }
     register(dto) {
         return this.authService.register(dto);
     }
@@ -90,6 +131,24 @@ __decorate([
     __metadata("design:paramtypes", [LoginDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('public-signup'),
+    (0, common_1.HttpCode)(201),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [PublicSignupDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "publicSignup", null);
+__decorate([
+    (0, common_1.Post)('redeem-invite'),
+    (0, common_1.UseGuards)(guards_1.JwtAuthGuard),
+    (0, common_1.HttpCode)(200),
+    __param(0, (0, decorators_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, RedeemInviteDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "redeemInvite", null);
 __decorate([
     (0, common_1.Post)('register'),
     (0, common_1.HttpCode)(201),

@@ -4,10 +4,10 @@ import { api, getStoredUser, logout } from '@/lib/api';
 import {
   BookOpen, Users, Building2, Grid3X3, LogOut, BarChart3,
   BookMarked, GraduationCap, Plus, X, Trash2, CheckCircle2,
-  ChevronRight, UserPlus, Calendar, Link2,
+  ChevronRight, UserPlus, Calendar, Link2, KeyRound,
 } from 'lucide-react';
 
-type Tab = 'overview' | 'campuses' | 'classes' | 'sections' | 'subjects' | 'users' | 'academic-years' | 'enrollments' | 'allocations' | 'parent-associations' | 'bulk-csv';
+type Tab = 'overview' | 'campuses' | 'classes' | 'sections' | 'subjects' | 'users' | 'academic-years' | 'enrollments' | 'allocations' | 'parent-associations' | 'invites' | 'bulk-csv';
 
 
 function FormPanel({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
@@ -51,6 +51,8 @@ export default function AdminDashboard() {
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [allocations, setAllocations] = useState<any[]>([]);
   const [parentAssociations, setParentAssociations] = useState<any[]>([]);
+  const [invites, setInvites] = useState<any[]>([]);
+  const [inviteForm, setInviteForm] = useState({ inviteCode: '', sectionId: '', targetRole: 'STUDENT', maxUses: '100' });
 
   // Form states
   const [campusForm, setCampusForm] = useState({ name: '', address: '' });
@@ -66,7 +68,7 @@ export default function AdminDashboard() {
 
   const loadAll = async () => {
     setLoading(true);
-    const [s, c, cl, sec, sub, u, ay, en, al, pa] = await Promise.all([
+    const [s, c, cl, sec, sub, u, ay, en, al, pa, inv] = await Promise.all([
       api.getAdminStats().catch(() => null),
       api.getCampuses().catch(() => []),
       api.getClasses().catch(() => []),
@@ -77,10 +79,12 @@ export default function AdminDashboard() {
       api.getEnrollments().catch(() => []),
       api.getAllocations().catch(() => []),
       api.getParentAssociations().catch(() => []),
+      api.getAdminInvites().catch(() => ({ invites: [] })),
     ]);
     setStats(s); setCampuses(c); setClasses(cl); setSections(sec);
     setSubjects(sub); setUsers(u); setAcademicYears(ay);
     setEnrollments(en); setAllocations(al); setParentAssociations(pa);
+    setInvites(inv?.invites || []);
     setLoading(false);
   };
 
@@ -177,6 +181,7 @@ export default function AdminDashboard() {
     { key: 'allocations', label: 'Allocations', icon: Link2 },
     { key: 'users', label: 'Users', icon: Users },
     { key: 'parent-associations', label: 'Parent Links', icon: UserPlus },
+    { key: 'invites', label: 'Invite Codes', icon: KeyRound },
     { key: 'bulk-csv', label: 'Bulk Import', icon: ChevronRight },
   ];
 
@@ -591,6 +596,71 @@ export default function AdminDashboard() {
                       )}
                     </tbody>
 
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ── Invite Codes ───────────────────────────────────────────── */}
+            {activeTab === 'invites' && (
+              <div>
+                {!showForm && <button onClick={() => setShowForm(true)} className={`${btnPrimary} flex items-center gap-2 mb-4`}><Plus className="w-4 h-4" />Generate Invite Code</button>}
+                {showForm && (
+                  <FormPanel title="Generate School Invite Code" onClose={() => setShowForm(false)}>
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        try {
+                          await api.createAdminInvite({
+                            inviteCode: inviteForm.inviteCode || undefined,
+                            sectionId: inviteForm.sectionId || undefined,
+                            targetRole: inviteForm.targetRole,
+                            maxUses: parseInt(inviteForm.maxUses) || 100,
+                          });
+                          flash('Invite code generated!');
+                          setInviteForm({ inviteCode: '', sectionId: '', targetRole: 'STUDENT', maxUses: '100' });
+                          setShowForm(false);
+                          await loadAll();
+                        } catch (err: any) { flash('Error: ' + err.message); }
+                      }}
+                      className="space-y-3"
+                    >
+                      <input placeholder="Custom code (leave blank to auto-generate)" className={inputCls + ' uppercase font-mono'} value={inviteForm.inviteCode} onChange={e => setInviteForm(p => ({ ...p, inviteCode: e.target.value }))} />
+                      <select className={inputCls} value={inviteForm.sectionId} onChange={e => setInviteForm(p => ({ ...p, sectionId: e.target.value }))}>
+                        <option value="">Optional: Auto-enroll into section</option>
+                        {sections.map((s: any) => <option key={s.id} value={s.id}>{s.class_name} › {s.name}</option>)}
+                      </select>
+                      <div className="grid grid-cols-2 gap-3">
+                        <select className={inputCls} value={inviteForm.targetRole} onChange={e => setInviteForm(p => ({ ...p, targetRole: e.target.value }))}>
+                          <option value="STUDENT">STUDENT</option>
+                          <option value="TEACHER">TEACHER</option>
+                        </select>
+                        <input type="number" min={1} max={5000} placeholder="Max uses" className={inputCls} value={inviteForm.maxUses} onChange={e => setInviteForm(p => ({ ...p, maxUses: e.target.value }))} />
+                      </div>
+                      <button type="submit" className={btnPrimary}>Create Invite Code</button>
+                    </form>
+                  </FormPanel>
+                )}
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+                      <th className="px-4 py-3 text-left">Code</th>
+                      <th className="px-4 py-3 text-left">Target Role</th>
+                      <th className="px-4 py-3 text-left">Section</th>
+                      <th className="px-4 py-3 text-left">Uses</th>
+                      <th className="px-4 py-3 text-left">Expires</th>
+                    </tr></thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {invites.map((inv: any) => (
+                        <tr key={inv.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-mono font-bold text-indigo-700">{inv.invite_code}</td>
+                          <td className="px-4 py-3 text-xs">{inv.target_role}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500">{inv.section_name || 'School-wide'}</td>
+                          <td className="px-4 py-3 text-xs">{inv.uses_count} / {inv.max_uses}</td>
+                          <td className="px-4 py-3 text-xs text-gray-400">{new Date(inv.expires_at).toLocaleDateString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
                   </table>
                 </div>
               </div>

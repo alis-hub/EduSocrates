@@ -8,6 +8,7 @@ import { AiProxyModule } from './ai-proxy/ai-proxy.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
 import { RedisModule } from './redis/redis.module';
 import { ParentModule } from './parent/parent.module';
+import { HubModule } from './hub/hub.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ParentModule } from './parent/parent.module';
     AiProxyModule,
     SuperAdminModule,
     ParentModule,
+    HubModule,
   ],
 })
 export class AppModule {}

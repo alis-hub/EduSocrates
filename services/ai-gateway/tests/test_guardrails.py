@@ -10,6 +10,7 @@ from app.guardrails.pipeline import (
     ThreatLevel, IntentCategory
 )
 from app.pii.redactor import redact_pii
+from app.prompts.socratic_prompt import build_system_prompt
 
 
 def test_layer1_blocks_system_override():
@@ -92,6 +93,21 @@ def test_layer5_intercepts_naked_answer():
     assert "EduSocrates Filter Triggered" in chunk
 
 
+def test_prompt_public_hub_sandbox_adaptive_levels():
+    p_elem = build_system_prompt(
+        subject_name="Physics",
+        assignment_title="Gravity",
+        assignment_description="Why do things fall?",
+        ai_system_notes="",
+        session_type="PUBLIC_HUB_SANDBOX",
+        difficulty_level="ELEMENTARY",
+        sandbox_mode="TOY_PROBLEM",
+    )
+    assert "PUBLIC_HUB_SANDBOX" in p_elem
+    assert "ELEMENTARY" in p_elem
+    assert "TOY-PROBLEM GENERATION" in p_elem
+
+
 if __name__ == "__main__":
     test_layer1_blocks_system_override()
     test_layer1_blocks_dan_jailbreak()
@@ -106,5 +122,6 @@ if __name__ == "__main__":
     test_layer5_intercepts_naked_answer()
     test_pii_email_redaction()
     test_pii_clean_text()
+    test_prompt_public_hub_sandbox_adaptive_levels()
     print("All guardrail tests passed [OK]")
 

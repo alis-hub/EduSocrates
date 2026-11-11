@@ -284,6 +284,12 @@ let AdminController = class AdminController {
     deleteParentAssociation(user, id) {
         return this.adminService.deleteParentAssociation(user.schoolId, id);
     }
+    getInvites(user) {
+        return this.adminService.getInvites(user.schoolId);
+    }
+    createInvite(user, dto) {
+        return this.adminService.createInvite(user.schoolId, user.id, dto);
+    }
     getStats(user) {
         return this.adminService.getDashboardStats(user.schoolId);
     }
@@ -488,6 +494,23 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "deleteParentAssociation", null);
+__decorate([
+    (0, common_1.Get)('invites'),
+    (0, decorators_1.Roles)('SCHOOL_ADMIN', 'SUPER_ADMIN'),
+    __param(0, (0, decorators_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getInvites", null);
+__decorate([
+    (0, common_1.Post)('invites'),
+    (0, decorators_1.Roles)('SCHOOL_ADMIN', 'SUPER_ADMIN'),
+    __param(0, (0, decorators_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "createInvite", null);
 __decorate([
     (0, common_1.Get)('stats'),
     (0, decorators_1.Roles)('SCHOOL_ADMIN', 'SUPER_ADMIN'),

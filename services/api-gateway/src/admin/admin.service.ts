@@ -266,6 +266,45 @@ export class AdminService {
     return { deleted: true };
   }
 
+  // ── School Invite Codes ──────────────────────────────────────────────────── //
+  async getInvites(schoolId: string) {
+    return this.db.queryWithTenant(
+      schoolId,
+      `SELECT si.*, c.name as campus_name, sec.name as section_name
+       FROM school_invites si
+       LEFT JOIN campuses c ON c.id = si.campus_id
+       LEFT JOIN sections sec ON sec.id = si.section_id
+       WHERE si.school_id = $1
+       ORDER BY si.created_at DESC`,
+      [schoolId],
+    );
+  }
+
+  async createInvite(
+    schoolId: string,
+    createdBy: string,
+    dto: { campusId?: string; sectionId?: string; targetRole?: string; maxUses?: number; customCode?: string },
+  ) {
+    const suffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const code = (dto.customCode?.trim().toUpperCase() || `EDU-${suffix}`);
+    const rows = await this.db.queryWithTenant(
+      schoolId,
+      `INSERT INTO school_invites (school_id, campus_id, section_id, invite_code, target_role, created_by, max_uses)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [
+        schoolId,
+        dto.campusId || null,
+        dto.sectionId || null,
+        code,
+        dto.targetRole || 'STUDENT',
+        createdBy,
+        dto.maxUses || 100,
+      ],
+    );
+    return rows[0];
+  }
+
   // ── Dashboard Stats ──────────────────────────────────────────────────────── //
   async getDashboardStats(schoolId: string) {
     const [campuses, classes, sections, users, coursework, enrollments] = await Promise.all([

@@ -39,5 +39,7 @@ export declare class SuperAdminController {
             created_at: any;
         }[];
     }>;
+    getLeads(): Promise<any[]>;
+    updateLeadStatus(id: string, status: string): Promise<any>;
 }
 export {};

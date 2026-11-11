@@ -17,6 +17,7 @@ const ai_proxy_module_1 = require("./ai-proxy/ai-proxy.module");
 const super_admin_module_1 = require("./super-admin/super-admin.module");
 const redis_module_1 = require("./redis/redis.module");
 const parent_module_1 = require("./parent/parent.module");
+const hub_module_1 = require("./hub/hub.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -32,6 +33,7 @@ exports.AppModule = AppModule = __decorate([
             ai_proxy_module_1.AiProxyModule,
             super_admin_module_1.SuperAdminModule,
             parent_module_1.ParentModule,
+            hub_module_1.HubModule,
         ],
     })
 ], AppModule);

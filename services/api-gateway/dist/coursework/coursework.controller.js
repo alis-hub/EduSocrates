@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CourseworkController = exports.AiGuidanceMode = exports.CourseworkType = void 0;
+exports.PublicCourseworkController = exports.CourseworkController = exports.CourseworkAccessLevel = exports.AiGuidanceMode = exports.CourseworkType = void 0;
 const common_1 = require("@nestjs/common");
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
@@ -32,6 +32,12 @@ var AiGuidanceMode;
     AiGuidanceMode["TERMINOLOGY_ONLY"] = "TERMINOLOGY_ONLY";
     AiGuidanceMode["DISABLED"] = "DISABLED";
 })(AiGuidanceMode || (exports.AiGuidanceMode = AiGuidanceMode = {}));
+var CourseworkAccessLevel;
+(function (CourseworkAccessLevel) {
+    CourseworkAccessLevel["PRIVATE"] = "PRIVATE";
+    CourseworkAccessLevel["PUBLIC_DIRECTORY"] = "PUBLIC_DIRECTORY";
+    CourseworkAccessLevel["UNLISTED"] = "UNLISTED";
+})(CourseworkAccessLevel || (exports.CourseworkAccessLevel = CourseworkAccessLevel = {}));
 class CreateCourseworkDto {
     sectionId;
     subjectId;
@@ -44,6 +50,9 @@ class CreateCourseworkDto {
     aiSystemNotes;
     rubric;
     timeLimitMinutes;
+    isPublic;
+    accessLevel;
+    socraticSystemPromptOverride;
     assessmentType;
     type;
 }
@@ -67,9 +76,7 @@ __decorate([
 ], CreateCourseworkDto.prototype, "description", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(CourseworkType),
-    (0, class_transformer_1.Transform)(({ obj, value }) => {
-        return value ?? obj.type ?? obj.assessmentType ?? 'HOMEWORK';
-    }),
+    (0, class_transformer_1.Transform)(({ obj, value }) => value ?? obj.type ?? obj.assessmentType ?? 'HOMEWORK'),
     __metadata("design:type", String)
 ], CreateCourseworkDto.prototype, "courseworkType", void 0);
 __decorate([
@@ -106,6 +113,21 @@ __decorate([
 ], CreateCourseworkDto.prototype, "timeLimitMinutes", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateCourseworkDto.prototype, "isPublic", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(CourseworkAccessLevel),
+    __metadata("design:type", String)
+], CreateCourseworkDto.prototype, "accessLevel", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCourseworkDto.prototype, "socraticSystemPromptOverride", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateCourseworkDto.prototype, "assessmentType", void 0);
@@ -114,6 +136,13 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateCourseworkDto.prototype, "type", void 0);
+class UpdateVisibilityDto {
+    accessLevel;
+}
+__decorate([
+    (0, class_validator_1.IsEnum)(CourseworkAccessLevel),
+    __metadata("design:type", String)
+], UpdateVisibilityDto.prototype, "accessLevel", void 0);
 class GradeSubmissionDto {
     score;
     teacherFeedback;
@@ -159,6 +188,9 @@ let CourseworkController = class CourseworkController {
     getTeacherCoursework(user) {
         return this.courseworkService.getTeacherCoursework(user.schoolId, user.id);
     }
+    updateVisibility(user, courseworkId, dto) {
+        return this.courseworkService.updateVisibility(user.schoolId, courseworkId, dto.accessLevel);
+    }
     getSubmissions(user, courseworkId) {
         return this.courseworkService.getSubmissions(user.schoolId, courseworkId);
     }
@@ -193,6 +225,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], CourseworkController.prototype, "getTeacherCoursework", null);
+__decorate([
+    (0, common_1.Patch)('teacher/coursework/:id/visibility'),
+    (0, decorators_1.Roles)('TEACHER', 'SCHOOL_ADMIN'),
+    __param(0, (0, decorators_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, UpdateVisibilityDto]),
+    __metadata("design:returntype", void 0)
+], CourseworkController.prototype, "updateVisibility", null);
 __decorate([
     (0, common_1.Get)('teacher/coursework/:id/submissions'),
     (0, decorators_1.Roles)('TEACHER', 'SCHOOL_ADMIN'),
@@ -245,4 +287,35 @@ exports.CourseworkController = CourseworkController = __decorate([
     (0, common_1.UseGuards)(guards_1.JwtAuthGuard, guards_1.RolesGuard),
     __metadata("design:paramtypes", [coursework_service_1.CourseworkService])
 ], CourseworkController);
+let PublicCourseworkController = class PublicCourseworkController {
+    courseworkService;
+    constructor(courseworkService) {
+        this.courseworkService = courseworkService;
+    }
+    listPublicCoursework(subject) {
+        return this.courseworkService.getPublicCourseworkList(subject);
+    }
+    getPublicCourseworkById(id) {
+        return this.courseworkService.getPublicCourseworkById(id);
+    }
+};
+exports.PublicCourseworkController = PublicCourseworkController;
+__decorate([
+    (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)('subject')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PublicCourseworkController.prototype, "listPublicCoursework", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PublicCourseworkController.prototype, "getPublicCourseworkById", null);
+exports.PublicCourseworkController = PublicCourseworkController = __decorate([
+    (0, common_1.Controller)('public/coursework'),
+    __metadata("design:paramtypes", [coursework_service_1.CourseworkService])
+], PublicCourseworkController);
 //# sourceMappingURL=coursework.controller.js.map

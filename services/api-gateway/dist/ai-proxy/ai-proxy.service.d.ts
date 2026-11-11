@@ -8,11 +8,13 @@ export declare class AiProxyService {
     private readonly redisService;
     private readonly aiGatewayUrl;
     constructor(db: DatabaseService, config: ConfigService, redisService: RedisService);
+    getAiGatewayUrl(): string;
     startSession(user: any, courseworkId: string): Promise<{
         subjectId: any;
         session_id: string;
     }>;
     checkAndDecrementQuota(schoolId: string, studentId: string, subjectId: string): Promise<void>;
+    proxySseEndpoint(path: string, payload: Record<string, any>, res: Response): void;
     proxyStream(sessionId: string, message: string, subjectId: string, schoolId: string, studentId: string, res: Response): Promise<void>;
     getAuditLog(schoolId: string, limit: number, filters?: {
         courseworkId?: string;

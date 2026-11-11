@@ -6,7 +6,7 @@ import {
   Plus, X, CheckCircle2, ToggleLeft, ToggleRight, GraduationCap, Users,
 } from 'lucide-react';
 
-type Tab = 'overview' | 'schools' | 'audit';
+type Tab = 'overview' | 'schools' | 'leads' | 'audit';
 
 function StatusMsg({ msg }: { msg: string }) {
   if (!msg) return null;
@@ -35,6 +35,7 @@ export default function SuperAdminDashboard() {
 
   const [stats, setStats] = useState<any>(null);
   const [schools, setSchools] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
   const [audit, setAudit] = useState<any[]>([]);
 
   const [schoolForm, setSchoolForm] = useState({ name: '', slug: '', domain: '' });
@@ -43,13 +44,15 @@ export default function SuperAdminDashboard() {
 
   const loadAll = async () => {
     setLoading(true);
-    const [s, sc, au] = await Promise.all([
+    const [s, sc, ld, au] = await Promise.all([
       api.superAdmin.getStats().catch(() => null),
       api.superAdmin.getSchools().catch(() => []),
+      api.superAdmin.getLeads().catch(() => ({ leads: [] })),
       api.superAdmin.getAiAudit(200).catch(() => ({ entries: [] })),
     ]);
     setStats(s);
     setSchools(sc);
+    setLeads(ld?.leads ?? []);
     setAudit(Array.isArray(au) ? au : (au?.entries ?? []));
     setLoading(false);
   };
@@ -104,6 +107,7 @@ export default function SuperAdminDashboard() {
           {[
             { key: 'overview', label: 'Platform Overview', icon: BarChart3 },
             { key: 'schools', label: 'Schools', icon: Building2 },
+            { key: 'leads', label: `School Leads (${leads.length})`, icon: Users },
             { key: 'audit', label: 'Global AI Audit', icon: ShieldAlert },
           ].map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => switchTab(key as Tab)}
@@ -215,6 +219,55 @@ export default function SuperAdminDashboard() {
                     ))}
                   </tbody></table>
                 </div>
+              </div>
+            )}
+
+            {/* ── School Leads ─────────────────────────────────────────── */}
+            {activeTab === 'leads' && (
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+                      <th className="px-4 py-3 text-left">School</th>
+                      <th className="px-4 py-3 text-left">Requester</th>
+                      <th className="px-4 py-3 text-left">City</th>
+                      <th className="px-4 py-3 text-left">Status</th>
+                      <th className="px-4 py-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {leads.length === 0 ? (
+                      <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">No school interest leads submitted yet.</td></tr>
+                    ) : leads.map((ld: any) => (
+                      <tr key={ld.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-900">{ld.school_name}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600">{ld.requester_email} ({ld.role_type})</td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{ld.campus_city}</td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">{ld.status}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <select
+                            value={ld.status}
+                            onChange={async (e) => {
+                              try {
+                                await api.superAdmin.updateLeadStatus(ld.id, e.target.value);
+                                flash('Lead status updated.');
+                                await loadAll();
+                              } catch (err: any) { flash('Error: ' + err.message); }
+                            }}
+                            className="text-xs border border-gray-200 rounded px-2 py-1 bg-white"
+                          >
+                            <option value="PENDING">PENDING</option>
+                            <option value="CONTACTED">CONTACTED</option>
+                            <option value="ONBOARDED">ONBOARDED</option>
+                            <option value="ARCHIVED">ARCHIVED</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
 

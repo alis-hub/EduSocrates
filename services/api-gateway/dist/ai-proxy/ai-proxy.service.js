@@ -60,14 +60,24 @@ let AiProxyService = class AiProxyService {
         this.db = db;
         this.config = config;
         this.redisService = redisService;
-        const rawUrl = (config.get('AI_GATEWAY_URL') || 'http://localhost:8000').trim().replace(/\/+$/, '');
+        const rawUrl = (config.get('AI_GATEWAY_URL') || 'http://localhost:8000')
+            .trim()
+            .replace(/\/+$/, '');
         this.aiGatewayUrl = rawUrl;
+    }
+    getAiGatewayUrl() {
+        return this.aiGatewayUrl;
     }
     async startSession(user, courseworkId) {
         const rows = await this.db.queryWithTenant(user.schoolId, `SELECT cw.*, sub.name as subject_name, sub.id as subject_id
        FROM coursework cw
        JOIN subjects sub ON sub.id = cw.subject_id
-       WHERE cw.id = $1 AND cw.school_id = $2`, [courseworkId, user.schoolId]);
+       WHERE cw.id = $1
+         AND (
+           cw.school_id = $2
+           OR cw.is_public = TRUE
+           OR cw.access_level IN ('PUBLIC_DIRECTORY', 'UNLISTED')
+         )`, [courseworkId, user.schoolId]);
         if (!rows.length)
             throw new common_1.NotFoundException('Coursework not found');
         const cw = rows[0];
@@ -84,6 +94,8 @@ let AiProxyService = class AiProxyService {
             ai_system_notes: cw.ai_system_notes,
             ai_guidance_mode: cw.ai_guidance_mode,
             teacher_guidance: cw.rubric ?? '',
+            socratic_system_prompt_override: cw.socratic_system_prompt_override ?? null,
+            session_type: 'COURSEWORK',
         };
         let response;
         try {
@@ -98,20 +110,48 @@ let AiProxyService = class AiProxyService {
             throw new common_1.HttpException(`Unable to reach AI Gateway (${this.aiGatewayUrl}): ${err.message || 'connection failed'}`, common_1.HttpStatus.BAD_GATEWAY);
         }
         if (!response.ok) {
-            const errText = await response.text().catch(() => '');
-            console.error('[ai-proxy] AI gateway session start failed:', response.status, errText);
-            throw new common_1.HttpException(`AI gateway session start failed (${response.status}): ${errText || response.statusText}`, common_1.HttpStatus.BAD_GATEWAY);
+            const errBody = await response.text().catch(() => '');
+            console.error('[ai-proxy] AI Gateway session start failed:', response.status, errBody);
+            throw new common_1.HttpException(`AI gateway session start failed (${response.status}): ${errBody || response.statusText}`, common_1.HttpStatus.BAD_GATEWAY);
         }
-        const data = await response.json();
+        const data = (await response.json());
         await this.db.queryWithTenant(user.schoolId, `INSERT INTO ai_tutoring_sessions
-         (id, school_id, student_id, coursework_id, session_status, total_tokens_consumed)
-       VALUES ($1, $2, $3, $4, 'ACTIVE', 0)
+         (id, school_id, student_id, coursework_id, session_type, session_status, total_tokens_consumed)
+       VALUES ($1, $2, $3, $4, 'COURSEWORK', 'ACTIVE', 0)
        ON CONFLICT (id) DO NOTHING`, [data.session_id, user.schoolId, user.id, courseworkId]);
         return { ...data, subjectId: cw.subject_id };
     }
     async checkAndDecrementQuota(schoolId, studentId, subjectId) {
         const key = `quota:${schoolId}:${studentId}:${subjectId}`;
         await this.redisService.checkAndIncrementQuota(key, QUOTA_WINDOW_MS, QUOTA_LIMIT);
+    }
+    proxySseEndpoint(path, payload, res) {
+        const url = new URL(`${this.aiGatewayUrl}${path}`);
+        const body = JSON.stringify(payload);
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
+        const lib = url.protocol === 'https:' ? https : http;
+        const req = lib.request({
+            host: url.hostname,
+            port: url.port || (url.protocol === 'https:' ? 443 : 80),
+            path: url.pathname,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(body),
+            },
+        }, (proxyRes) => {
+            proxyRes.on('data', (chunk) => res.write(chunk));
+            proxyRes.on('end', () => res.end());
+        });
+        req.on('error', () => {
+            res.write(`data: {"error": true, "token": "AI service unavailable. Please try again."}\n\n`);
+            res.end();
+        });
+        req.write(body);
+        req.end();
     }
     async proxyStream(sessionId, message, subjectId, schoolId, studentId, res) {
         const url = new URL(`${this.aiGatewayUrl}/api/v1/ai/chat/stream`);
@@ -142,12 +182,10 @@ let AiProxyService = class AiProxyService {
                         continue;
                     try {
                         const data = JSON.parse(line.slice(5).trim());
-                        if (data.intercepted) {
+                        if (data.intercepted)
                             wasIntercepted = true;
-                        }
-                        if (data.token && !data.done) {
+                        if (data.token && !data.done)
                             accumulatedResponse += data.token;
-                        }
                     }
                     catch { }
                 }
@@ -198,7 +236,7 @@ let AiProxyService = class AiProxyService {
        FROM ai_tutoring_messages atm
        JOIN ai_tutoring_sessions ats ON ats.id = atm.session_id
        JOIN users u ON u.id = ats.student_id
-       JOIN coursework cw ON cw.id = ats.coursework_id
+       LEFT JOIN coursework cw ON cw.id = ats.coursework_id
        WHERE ats.school_id = $1 AND atm.sender_type = 'STUDENT' ${whereClause}
        ORDER BY atm.created_at DESC
        LIMIT $2`, params);
@@ -217,7 +255,7 @@ let AiProxyService = class AiProxyService {
             coursework_id: r.coursework_id,
             first_name: r.first_name,
             last_name: r.last_name,
-            coursework_title: r.coursework_title,
+            coursework_title: r.coursework_title || 'Public Hub Session',
         }));
         return { school_id: schoolId, total_entries: mapped.length, entries: mapped };
     }
@@ -225,7 +263,7 @@ let AiProxyService = class AiProxyService {
         try {
             const response = await fetch(`${this.aiGatewayUrl}/api/v1/ai/sessions/${sessionId}/messages`);
             if (response.ok) {
-                const data = await response.json();
+                const data = (await response.json());
                 if (data?.messages?.length > 0)
                     return data;
             }

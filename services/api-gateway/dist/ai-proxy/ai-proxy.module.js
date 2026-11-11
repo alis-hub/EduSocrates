@@ -20,6 +20,7 @@ exports.AiProxyModule = AiProxyModule = __decorate([
         imports: [database_module_1.DatabaseModule, redis_module_1.RedisModule],
         controllers: [ai_proxy_controller_1.AiProxyController],
         providers: [ai_proxy_service_1.AiProxyService],
+        exports: [ai_proxy_service_1.AiProxyService],
     })
 ], AiProxyModule);
 //# sourceMappingURL=ai-proxy.module.js.map

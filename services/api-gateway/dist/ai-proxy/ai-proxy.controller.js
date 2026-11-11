@@ -71,7 +71,7 @@ let AiProxyController = class AiProxyController {
 exports.AiProxyController = AiProxyController;
 __decorate([
     (0, common_1.Post)('ai/session/start'),
-    (0, decorators_1.Roles)('STUDENT'),
+    (0, decorators_1.Roles)('STUDENT', 'INDEPENDENT_STUDENT'),
     __param(0, (0, decorators_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -80,7 +80,7 @@ __decorate([
 ], AiProxyController.prototype, "startSession", null);
 __decorate([
     (0, common_1.Post)('ai/chat/stream'),
-    (0, decorators_1.Roles)('STUDENT'),
+    (0, decorators_1.Roles)('STUDENT', 'INDEPENDENT_STUDENT'),
     __param(0, (0, decorators_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Res)()),

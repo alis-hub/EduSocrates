@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RolesGuard = exports.JwtAuthGuard = exports.ROLES_KEY = void 0;
+exports.RolesGuard = exports.OptionalJwtAuthGuard = exports.JwtAuthGuard = exports.ROLES_KEY = void 0;
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const passport_1 = require("@nestjs/passport");
@@ -20,6 +20,15 @@ exports.JwtAuthGuard = JwtAuthGuard;
 exports.JwtAuthGuard = JwtAuthGuard = __decorate([
     (0, common_1.Injectable)()
 ], JwtAuthGuard);
+let OptionalJwtAuthGuard = class OptionalJwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
+    handleRequest(_err, user) {
+        return user || null;
+    }
+};
+exports.OptionalJwtAuthGuard = OptionalJwtAuthGuard;
+exports.OptionalJwtAuthGuard = OptionalJwtAuthGuard = __decorate([
+    (0, common_1.Injectable)()
+], OptionalJwtAuthGuard);
 let RolesGuard = class RolesGuard {
     reflector;
     constructor(reflector) {

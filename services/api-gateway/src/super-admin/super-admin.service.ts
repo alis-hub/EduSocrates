@@ -96,6 +96,21 @@ export class SuperAdminService {
 
     return { total_entries: entries.length, entries };
   }
+
+  /** List institutional lead inquiries from the public funnel. */
+  async getSchoolLeads() {
+    return this.db.query(
+      `SELECT * FROM school_interest_leads ORDER BY created_at DESC LIMIT 200`,
+    );
+  }
+
+  async updateLeadStatus(id: string, status: string) {
+    const rows = await this.db.query(
+      `UPDATE school_interest_leads SET status = $1 WHERE id = $2 RETURNING *`,
+      [status, id],
+    );
+    return rows[0];
+  }
 }
 
 

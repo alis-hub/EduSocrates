@@ -93,6 +93,8 @@ export declare class AdminController {
     deleteParentAssociation(user: any, id: string): Promise<{
         deleted: boolean;
     }>;
+    getInvites(user: any): Promise<any[]>;
+    createInvite(user: any, dto: any): Promise<any>;
     getStats(user: any): Promise<{
         campuses: any;
         classes: any;

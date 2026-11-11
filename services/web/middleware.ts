@@ -10,7 +10,8 @@ const ROLE_ROUTES: Record<string, string[]> = {
   SUPER_ADMIN: ['/super-admin', '/admin'],
   SCHOOL_ADMIN: ['/admin'],
   TEACHER: ['/teacher'],
-  STUDENT: ['/student'],
+  STUDENT: ['/student', '/hub', '/whiteboard', '/coursework'],
+  INDEPENDENT_STUDENT: ['/hub', '/whiteboard', '/coursework'],
   PARENT: ['/parent'],
 };
 
@@ -102,6 +103,8 @@ function getDefaultRoute(role: string): string {
       return '/teacher';
     case 'PARENT':
       return '/parent';
+    case 'INDEPENDENT_STUDENT':
+      return '/hub';
     case 'STUDENT':
     default:
       return '/student';
