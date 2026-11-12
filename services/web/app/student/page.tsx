@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { api, getStoredUser, logout } from '@/lib/api';
 import SocraticChatStream from '@/components/SocraticChatStream';
+import { BrandLogo } from '@/components/BrandLogo';
 import { BookOpen, Clock, CheckCircle2, MessageSquare, Upload, LogOut, ChevronRight, X, Filter, Timer, Compass, Layers, PenTool } from 'lucide-react';
 
 interface Coursework {
@@ -195,8 +196,7 @@ export default function StudentDashboard() {
               <X className="w-4 h-4" />
             </button>
           )}
-          <BookOpen className="w-6 h-6 text-blue-600" />
-          <span className="font-bold text-gray-900">EduSocrates</span>
+          <BrandLogo variant="navbar" showTagline />
           <span className="ml-2 text-xs bg-emerald-100 text-emerald-700 rounded-full px-2 py-0.5">Student</span>
         </div>
         <div className="flex items-center gap-4">

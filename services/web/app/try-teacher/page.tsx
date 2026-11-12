@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, getApiBaseUrl } from '@/lib/api';
 import { KaTeXMath } from '@/components/KaTeXMath';
+import { BrandLogo } from '@/components/BrandLogo';
 import { BookOpen, Clock, FlaskConical, RefreshCw, Send, ShieldCheck } from 'lucide-react';
 
 const SANDBOX_TOKEN_KEY = 'edusocrates_teacher_sandbox_token';
@@ -138,8 +139,7 @@ export default function TryTeacherSandboxPage() {
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/hub" className="flex items-center gap-2 font-bold text-slate-900">
-            <BookOpen className="w-5 h-5 text-emerald-600" />
-            EduSocrates
+            <BrandLogo variant="navbar" showTagline />
           </Link>
           <span className="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
             <FlaskConical className="w-3.5 h-3.5" /> Try as a Teacher (2h Ephemeral Sandbox)
@@ -257,7 +257,7 @@ export default function TryTeacherSandboxPage() {
             <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200">
               <div className="font-bold text-sm text-slate-900">Simulated Student View ({aiMode})</div>
               <div className="text-xs text-slate-500">
-                Observe how EduSocrates enforces your rubric &amp; rejects cheat / injection attempts live.
+                Observe how GuruMera enforces your rubric &amp; rejects cheat / injection attempts live.
               </div>
             </div>
 

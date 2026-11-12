@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { BrandLogo } from '@/components/BrandLogo';
 
 const DEMO_ACCOUNTS = [
   { role: 'Public Learner', email: 'learner@public.org', label: 'Independent Learner (Samira)' },
@@ -63,11 +64,11 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 text-slate-900">
       <div className="w-full max-w-md space-y-5">
-        <div className="rounded-xl bg-white p-8 shadow-sm border border-slate-200">
+        <div className="rounded-2xl bg-white p-8 shadow-sm border border-[#E7E3D8]">
           <div className="mb-5 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">EduSocrates</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Multi-Tenant Academic Platform &amp; Public Socratic Learning Hub
+            <BrandLogo variant="vertical" className="h-32 w-auto mx-auto mb-2" />
+            <p className="mt-1 text-xs text-slate-600">
+              Multi-Tenant Academic Platform &amp; Public Socratic Learning Hub · v3.0
             </p>
           </div>
 

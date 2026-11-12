@@ -162,7 +162,7 @@ def layer5_verify_output(response_chunk: str, answer_key_terms: List[str]) -> Tu
     Returns (is_safe, safe_response_or_chunk).
     """
     redirect = (
-        "\n\n[EduSocrates Filter Triggered]: Let's step back and approach this differently. "
+        "\n\n[GuruMera Filter Triggered]: Let's step back and approach this differently. "
         "I want you to think about what concepts are at play here — "
         "can you identify the first principle that might apply to this problem? "
         "Walk me through your initial reasoning. 🔍"

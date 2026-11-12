@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api, getStoredUser, logout } from '@/lib/api';
+import { BrandLogo } from '@/components/BrandLogo';
 import {
   BookOpen, LogOut, PlusCircle, MessageSquare, CheckSquare2, ChevronLeft,
   ShieldAlert, Star, FileText, Eye, X, Sparkles, Globe, PenTool,
@@ -153,8 +154,7 @@ export default function TeacherDashboard() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
-          <BookOpen className="w-6 h-6 text-blue-600" />
-          <span className="font-bold text-gray-900">EduSocrates</span>
+          <BrandLogo variant="navbar" showTagline />
           <span className="ml-2 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5">Teacher</span>
         </div>
         <div className="flex items-center gap-4">

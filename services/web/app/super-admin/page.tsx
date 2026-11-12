@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api, getStoredUser, logout } from '@/lib/api';
+import { BrandLogo } from '@/components/BrandLogo';
 import {
   BookOpen, LogOut, BarChart3, Building2, Globe, ShieldAlert,
   Plus, X, CheckCircle2, ToggleLeft, ToggleRight, GraduationCap, Users,
@@ -89,8 +90,7 @@ export default function SuperAdminDashboard() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
-          <BookOpen className="w-6 h-6 text-purple-600" />
-          <span className="font-bold text-gray-900">EduSocrates</span>
+          <BrandLogo variant="navbar" showTagline />
           <span className="ml-2 text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5">Super Admin</span>
         </div>
         <div className="flex items-center gap-4">

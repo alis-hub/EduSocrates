@@ -10,6 +10,7 @@ import {
 } from '@/lib/api';
 import { KaTeXMath } from '@/components/KaTeXMath';
 import { MathGraphPlayground } from '@/components/MathGraphPlayground';
+import { BrandLogo } from '@/components/BrandLogo';
 import {
   Award,
   BookOpen,
@@ -561,8 +562,7 @@ export default function PublicLearningHubPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-indigo-600" />
-              <span className="font-bold text-slate-900">EduSocrates</span>
+              <BrandLogo variant="navbar" showTagline />
             </Link>
             <span className="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2.5 py-0.5 rounded-full">
               Public Learning Hub
@@ -757,7 +757,7 @@ export default function PublicLearningHubPage() {
                 {sandboxMsgs.length === 0 && (
                   <div className="text-center py-16 text-slate-400 text-sm max-w-md mx-auto">
                     Ask a concept question, share your reasoning steps, or pick a starter prompt on the left.
-                    EduSocrates guides your thinking without spoiling the answer.
+                    GuruMera guides your thinking without spoiling the answer.
                   </div>
                 )}
                 {sandboxMsgs.map((m, idx) => (
@@ -867,7 +867,7 @@ export default function PublicLearningHubPage() {
                   }`}
                 >
                   <div className="text-[11px] font-bold uppercase mb-1 text-slate-500">
-                    {m.role === 'user' ? 'Your Bug Report' : 'EduSocrates Code Coach'}
+                    {m.role === 'user' ? 'Your Bug Report' : 'GuruMera Code Coach'}
                   </div>
                   <KaTeXMath text={m.content || '...'} />
                 </div>
@@ -964,7 +964,7 @@ export default function PublicLearningHubPage() {
                   >
                     <div className="text-xs font-semibold text-indigo-600">{d.subject_area}</div>
                     <div className="font-bold text-slate-900 mt-0.5">{d.title}</div>
-                    <div className="text-xs text-slate-500 mt-1">{d.card_count} cards · by {d.creator_name || 'EduSocrates'}</div>
+                    <div className="text-xs text-slate-500 mt-1">{d.card_count} cards · by {d.creator_name || 'GuruMera'}</div>
                   </button>
                 ))}
               </div>
@@ -1429,7 +1429,7 @@ export default function PublicLearningHubPage() {
                         }`}
                       >
                         <div className="text-xs font-bold mb-1 text-slate-700">
-                          {r.is_ai_socratic_guide ? '🤖 EduSocrates Socratic Guide' : r.author_name}
+                          {r.is_ai_socratic_guide ? '🤖 GuruMera Socratic Guide' : r.author_name}
                         </div>
                         <KaTeXMath text={r.reply_body} />
                       </div>
@@ -1452,7 +1452,7 @@ export default function PublicLearningHubPage() {
                           checked={summonAi}
                           onChange={(e) => setSummonAi(e.target.checked)}
                         />
-                        Also ask @EduSocrates AI Moderator to synthesize &amp; guide
+                        Also ask @GuruMera AI Moderator to synthesize &amp; guide
                       </label>
                       <button
                         type="submit"

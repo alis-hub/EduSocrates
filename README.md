@@ -1,22 +1,22 @@
-# EduSocrates — Multi-Tenant Educational Platform & Public Socratic Learning Hub
+# GuruMera v3.0 — *Discover the Why!* | Multi-Tenant Educational Platform & Public Socratic Learning Hub
 
 Enterprise-grade academic management system with a defense-in-depth Socratic AI tutoring engine and an open Public Learning Hub. Built with **Next.js 16**, **NestJS 12**, **Python FastAPI**, and **PostgreSQL 16 Row-Level Security**.
 
 ---
 
-## About EduSocrates
+## About GuruMera
 
-### What is EduSocrates?
-**EduSocrates** is an intelligent educational platform designed both for **schools & districts** and for **independent self-learners worldwide**. At its core, it pairs multi-campus academic administration with a dedicated, pedagogical **Socratic AI Tutor** and a **Universal Public Learning Hub**.
+### What is GuruMera?
+**GuruMera** (*"Discover the Why!"*) is an intelligent educational platform designed both for **schools & districts** and for **independent self-learners worldwide**. At its core, it pairs multi-campus academic administration with a dedicated, pedagogical **Socratic AI Tutor** and a **Universal Public Learning Hub**.
 
-Unlike conventional AI tools that generate answers or write essays on demand, EduSocrates embeds the classical **Socratic Method** into every workflow. It engages learners through guided inquiry, progressive clues, thought-provoking questions, interactive math graphing, and concept-mapping checkpoints—building lasting problem-solving habits while actively preventing academic dishonesty.
+Unlike conventional AI tools that generate answers or write essays on demand, GuruMera embeds the classical **Socratic Method** into every workflow. It engages learners through guided inquiry, progressive clues, thought-provoking questions, interactive math graphing, and concept-mapping checkpoints—building lasting problem-solving habits while actively preventing academic dishonesty.
 
 ---
 
 ### Purpose & Vision
 In the era of generative AI, classrooms face a growing dilemma: students frequently treat chatbots as instant "homework solvers," bypassing foundational thinking. At the same time, motivated independent learners lack structured, interactive guidance outside enrolled classrooms.
 
-EduSocrates addresses both needs:
+GuruMera addresses both needs:
 1. **Restore Active Learning**: Provide a 24/7 study coach that challenges, hints, and probes misconceptions without giving away final solutions.
 2. **Empower Institutions & Educators**: Give schools a secure, multi-tenant digital campus where coursework, rubrics, study decks, collaborative whiteboards, and AI session auditing coexist cleanly.
 3. **Open Universal Access**: Offer an instant Public Learning Hub (`/hub`), live 2-hour *"Try as a Teacher"* simulator (`/try-teacher`), and self-serve school onboarding (`/schools`), allowing learners to carry streaks, XP, and flashcards seamlessly into any school later via Invite Code.

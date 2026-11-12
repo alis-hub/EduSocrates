@@ -64,7 +64,7 @@ def test_layer5_intercepts_answer_leak():
         ["final answer is 3/5"]
     )
     assert not is_safe
-    assert "EduSocrates Filter Triggered" in chunk
+    assert "GuruMera Filter Triggered" in chunk
 
 
 def test_pii_email_redaction():
@@ -84,13 +84,13 @@ def test_layer5_intercepts_code_block():
     code_block = "```python\ndef solve():\n    x = 42\n    y = 100\n    return x + y\nprint(solve())\n```"
     is_safe, chunk = layer5_verify_output(code_block, [])
     assert not is_safe
-    assert "EduSocrates Filter Triggered" in chunk
+    assert "GuruMera Filter Triggered" in chunk
 
 
 def test_layer5_intercepts_naked_answer():
     is_safe, chunk = layer5_verify_output("Therefore the final answer = 42 kg", ["42"])
     assert not is_safe
-    assert "EduSocrates Filter Triggered" in chunk
+    assert "GuruMera Filter Triggered" in chunk
 
 
 def test_prompt_public_hub_sandbox_adaptive_levels():

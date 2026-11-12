@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { BrandLogo } from '@/components/BrandLogo';
 import {
   BookOpen,
   Building2,
@@ -93,8 +94,7 @@ export default function SchoolsPortalPage() {
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/hub" className="flex items-center gap-2 font-bold text-slate-900">
-            <BookOpen className="w-5 h-5 text-indigo-600" />
-            EduSocrates
+            <BrandLogo variant="navbar" showTagline />
           </Link>
           <span className="text-xs bg-purple-100 text-purple-700 px-2.5 py-0.5 rounded-full font-semibold">
             Schools &amp; Onboarding
@@ -119,7 +119,7 @@ export default function SchoolsPortalPage() {
             Institutional Directory &amp; Self-Serve Onboarding
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Check whether your school already runs EduSocrates, request an invitation, or launch a live school tenant in 6 guided steps.
+            Check whether your school already runs GuruMera, request an invitation, or launch a live school tenant in 6 guided steps.
           </p>
         </div>
 
@@ -197,7 +197,7 @@ export default function SchoolsPortalPage() {
             onSubmit={handleLeadSubmit}
             className="bg-white border border-slate-200 rounded-2xl p-6 max-w-xl space-y-4 shadow-sm"
           >
-            <h2 className="font-bold text-lg text-slate-900">Request EduSocrates for Your School</h2>
+            <h2 className="font-bold text-lg text-slate-900">Request GuruMera for Your School</h2>
             <p className="text-xs text-slate-600">
               Submitted inquiries go directly to the Platform Super Admin Lead Queue.
             </p>

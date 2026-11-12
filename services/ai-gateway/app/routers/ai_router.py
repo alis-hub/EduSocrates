@@ -1,5 +1,5 @@
 """
-AI Gateway Chat Router — Core streaming, Public Learning Hub, & Teacher Sandbox endpoints (v2.3.0).
+AI Gateway Chat Router — Core streaming, Public Learning Hub, & Teacher Sandbox endpoints (v3.0).
 Sessions and audit log are Redis-backed with in-memory fallback.
 """
 import json
@@ -380,7 +380,7 @@ async def generate_flashcards(request: FlashcardGenerateRequest):
     """Generate a Socratic 2-tier clue flashcard deck from topic or assignment + rubric."""
     focus = request.assignment_title or request.topic or request.subject_area
     sys_prompt = (
-        "You are an expert curriculum designer for EduSocrates. "
+        "You are an expert curriculum designer for GuruMera. "
         "Generate a JSON array of flashcards with progressive Socratic clues. "
         "Each item MUST have exact keys: concept_title, clue_tier_1, clue_tier_2, terminal_definition."
     )
@@ -492,7 +492,7 @@ async def generate_practice_quiz(request: PracticeQuizGenerateRequest):
     """Generate a custom ungraded practice quiz with misconception explanations."""
     topic = request.topic or request.subject
     sys_prompt = (
-        "You are an assessment architect for EduSocrates. Generate diagnostic multiple-choice questions "
+        "You are an assessment architect for GuruMera. Generate diagnostic multiple-choice questions "
         "designed to reveal conceptual misconceptions."
     )
     user_prompt = (
@@ -541,7 +541,7 @@ async def generate_quiz_debrief(request: QuizDebriefRequest):
         return {"debrief": [{"socratic_guidance": "Perfect score! Consider trying an AP/Undergrad challenge next to test edge cases.", "guiding_question": "What assumption would break if we removed an idealization in this topic?"}]}
 
     sys_prompt = (
-        "You are EduSocrates conducting a post-quiz Socratic Misconception Debrief. "
+        "You are GuruMera conducting a post-quiz Socratic Misconception Debrief. "
         "Never scold the learner. Address WHY their chosen distractor looked tempting and ask ONE targeted guiding question."
     )
     user_prompt = (
@@ -575,7 +575,7 @@ async def generate_quiz_debrief(request: QuizDebriefRequest):
 async def evaluate_concept_checkpoint(request: ConceptEvaluateRequest):
     """Evaluate a learner's Socratic checkpoint explanation to unlock downstream DAG nodes."""
     sys_prompt = (
-        "You are EduSocrates evaluating a student's conceptual explanation for a Knowledge Map checkpoint. "
+        "You are GuruMera evaluating a student's conceptual explanation for a Knowledge Map checkpoint. "
         "Score 0-100 based on conceptual clarity (passing >= 70). Give encouraging Socratic feedback. "
         "Return ONLY JSON: {\"score\": int, \"passed\": bool, \"feedback\": str}."
     )
@@ -621,7 +621,7 @@ async def evaluate_concept_checkpoint(request: ConceptEvaluateRequest):
 async def moderate_discussion(request: DiscussionModerateRequest):
     """Generate a Socratic AI guide reply for a peer learning discussion thread."""
     sys_prompt = (
-        "You are EduSocrates acting as a neutral Socratic Moderator in a student peer discussion board. "
+        "You are GuruMera acting as a neutral Socratic Moderator in a student peer discussion board. "
         "Do NOT give away the final answer. Synthesize the peers' thoughts and pose ONE clarifying question to deepen the thread."
     )
     user_prompt = (
@@ -700,7 +700,7 @@ async def health():
     redis = await redis_client.get_redis()
     return {
         "status": "ok",
-        "service": "EduSocrates AI Gateway",
-        "version": "2.3.0",
+        "service": "GuruMera AI Gateway",
+        "version": "3.0.0",
         "redis": "connected" if redis else "unavailable (fallback active)",
     }

@@ -1010,7 +1010,7 @@ export class HubService {
     if (tRes.length === 0) throw new NotFoundException('Discussion thread not found');
 
     const rRes = await this.db.query(
-      `SELECT r.*, COALESCE(u.first_name || ' ' || u.last_name, 'EduSocrates AI Guide') AS author_name
+      `SELECT r.*, COALESCE(u.first_name || ' ' || u.last_name, 'GuruMera AI Guide') AS author_name
        FROM discussion_replies r
        LEFT JOIN users u ON u.id = r.author_id
        WHERE r.thread_id = $1

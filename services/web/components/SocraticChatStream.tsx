@@ -23,7 +23,7 @@ export default function SocraticChatStream({ sessionId, subjectId, courseworkTit
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Welcome! I'm EduSocrates, your Socratic tutor for **${subjectName} — ${courseworkTitle}**. I'm here to help you think through this problem step by step. What part would you like to explore first? 🔍`,
+      content: `Welcome! I'm GuruMera, your Socratic tutor for **${subjectName} — ${courseworkTitle}**. I'm here to help you think through this problem step by step. What part would you like to explore first? 🔍`,
     },
   ]);
   const [input, setInput] = useState('');
@@ -125,7 +125,7 @@ export default function SocraticChatStream({ sessionId, subjectId, courseworkTit
           <Bot className="w-4 h-4 text-white" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-blue-900">EduSocrates Tutor</p>
+          <p className="text-sm font-semibold text-blue-900">GuruMera Tutor</p>
           <p className="text-xs text-blue-600">{subjectName} &bull; Socratic Mode</p>
         </div>
         <div className="ml-auto flex items-center gap-1.5 text-xs text-green-600 bg-green-50 border border-green-200 rounded-full px-2.5 py-0.5">
@@ -194,7 +194,7 @@ export default function SocraticChatStream({ sessionId, subjectId, courseworkTit
           </button>
         </div>
         <p className="text-xs text-gray-400 mt-1.5 text-center">
-          EduSocrates guides you — it will not give direct answers. Your queries are rate-limited (15/hour).
+          GuruMera guides you — it will not give direct answers. Your queries are rate-limited (15/hour).
         </p>
       </div>
     </div>

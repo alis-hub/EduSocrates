@@ -24,7 +24,7 @@ async function bootstrap() {
     catch (err) {
         console.warn('Whiteboard WebSocket upgrade attachment skipped:', err);
     }
-    console.log(`EduSocrates API Gateway running on port ${port}`);
+    console.log(`GuruMera API Gateway v3.0 running on port ${port}`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

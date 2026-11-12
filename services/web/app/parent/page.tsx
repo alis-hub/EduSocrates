@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api, getStoredUser, logout } from '@/lib/api';
-import { BookOpen, LogOut, Users, Clock, CheckCircle2, Star, ChevronRight, X } from 'lucide-react';
+import { BrandLogo } from '@/components/BrandLogo';
+import { LogOut, Users, Clock, CheckCircle2, Star, ChevronRight, X } from 'lucide-react';
 
 interface Child {
   student_id: string;
@@ -79,8 +80,7 @@ export default function ParentPortal() {
               <X className="w-4 h-4" />
             </button>
           )}
-          <BookOpen className="w-6 h-6 text-purple-600" />
-          <span className="font-bold text-gray-900">EduSocrates</span>
+          <BrandLogo variant="navbar" showTagline />
           <span className="ml-2 text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5">Parent</span>
         </div>
         <div className="flex items-center gap-4">

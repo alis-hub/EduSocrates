@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
-    APP_NAME: str = "EduSocrates AI Gateway"
+    APP_NAME: str = "GuruMera AI Gateway"
     API_PREFIX: str = "/api/v1"
     PORT: int = 8000
     HOST: str = "0.0.0.0"
