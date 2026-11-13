@@ -28,6 +28,22 @@ class RedeemInviteDto {
   @IsString() @IsNotEmpty() inviteCode: string;
 }
 
+class SsoLoginDto {
+  @IsEnum(['google', 'linkedin'])
+  provider: 'google' | 'linkedin';
+
+  @IsEmail()
+  email: string;
+
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+}
+
 class RegisterDto {
   @IsEmail() email: string;
   @IsString() @MinLength(6) password: string;
@@ -46,6 +62,15 @@ export class AuthController {
   @HttpCode(200)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto.email, dto.password);
+  }
+
+  /**
+   * Single Sign-On login / registration (Google & LinkedIn).
+   */
+  @Post('sso')
+  @HttpCode(200)
+  ssoLogin(@Body() dto: SsoLoginDto) {
+    return this.authService.ssoLogin(dto);
   }
 
   /**

@@ -65,6 +65,30 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], RedeemInviteDto.prototype, "inviteCode", void 0);
+class SsoLoginDto {
+    provider;
+    email;
+    firstName;
+    lastName;
+}
+__decorate([
+    (0, class_validator_1.IsEnum)(['google', 'linkedin']),
+    __metadata("design:type", String)
+], SsoLoginDto.prototype, "provider", void 0);
+__decorate([
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], SsoLoginDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SsoLoginDto.prototype, "firstName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SsoLoginDto.prototype, "lastName", void 0);
 class RegisterDto {
     email;
     password;
@@ -112,6 +136,9 @@ let AuthController = class AuthController {
     login(dto) {
         return this.authService.login(dto.email, dto.password);
     }
+    ssoLogin(dto) {
+        return this.authService.ssoLogin(dto);
+    }
     publicSignup(dto) {
         return this.authService.publicSignup(dto);
     }
@@ -131,6 +158,14 @@ __decorate([
     __metadata("design:paramtypes", [LoginDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('sso'),
+    (0, common_1.HttpCode)(200),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [SsoLoginDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "ssoLogin", null);
 __decorate([
     (0, common_1.Post)('public-signup'),
     (0, common_1.HttpCode)(201),

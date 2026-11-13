@@ -12,6 +12,7 @@ import { KaTeXMath } from '@/components/KaTeXMath';
 import { MathGraphPlayground } from '@/components/MathGraphPlayground';
 import { BrandLogo } from '@/components/BrandLogo';
 import {
+  ArrowRight,
   Award,
   BookOpen,
   Brain,
@@ -26,6 +27,7 @@ import {
   LogIn,
   LogOut,
   MessageSquare,
+  Network,
   PenTool,
   PlusCircle,
   Send,
@@ -755,9 +757,83 @@ export default function PublicLearningHubPage() {
 
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 {sandboxMsgs.length === 0 && (
-                  <div className="text-center py-16 text-slate-400 text-sm max-w-md mx-auto">
-                    Ask a concept question, share your reasoning steps, or pick a starter prompt on the left.
-                    GuruMera guides your thinking without spoiling the answer.
+                  <div className="py-6 px-4 max-w-lg mx-auto text-center space-y-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[#1E225B]/10 text-[#1E225B] flex items-center justify-center mx-auto">
+                      <Sparkles className="w-6 h-6 text-[#F5921D]" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-[#1E225B] text-base">
+                        What would you like to master today?
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        GuruMera guides your reasoning with Socratic clues — never handing over a raw answer.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTopic("Physics: Newton's Laws");
+                          sendSandboxPrompt("Help me understand Newton's Third Law");
+                        }}
+                        className="p-3 rounded-xl border border-slate-200 hover:border-[#1E225B] hover:bg-slate-50 transition-all text-xs group"
+                      >
+                        <div className="font-bold text-[#1E225B] group-hover:text-[#F5921D] flex items-center gap-1.5">
+                          💡 Physics
+                        </div>
+                        <div className="text-slate-600 mt-1">
+                          &ldquo;Help me understand Newton&apos;s Third Law&rdquo;
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('code');
+                        }}
+                        className="p-3 rounded-xl border border-slate-200 hover:border-[#1E225B] hover:bg-slate-50 transition-all text-xs group"
+                      >
+                        <div className="font-bold text-[#1E225B] group-hover:text-[#F5921D] flex items-center gap-1.5">
+                          🔍 Code Debugger
+                        </div>
+                        <div className="text-slate-600 mt-1">
+                          &ldquo;Debug my Python loop&rdquo;
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTopic('Biology: Cellular Respiration');
+                          sendSandboxPrompt('Quiz me on cellular biology');
+                        }}
+                        className="p-3 rounded-xl border border-slate-200 hover:border-[#1E225B] hover:bg-slate-50 transition-all text-xs group"
+                      >
+                        <div className="font-bold text-[#1E225B] group-hover:text-[#F5921D] flex items-center gap-1.5">
+                          🧬 Biology
+                        </div>
+                        <div className="text-slate-600 mt-1">
+                          &ldquo;Quiz me on cellular biology&rdquo;
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTopic('Calculus: Derivatives');
+                          sendSandboxPrompt('Why does the derivative of e^x equal e^x?');
+                        }}
+                        className="p-3 rounded-xl border border-slate-200 hover:border-[#1E225B] hover:bg-slate-50 transition-all text-xs group"
+                      >
+                        <div className="font-bold text-[#1E225B] group-hover:text-[#F5921D] flex items-center gap-1.5">
+                          📐 Calculus
+                        </div>
+                        <div className="text-slate-600 mt-1">
+                          &ldquo;Why does the derivative of e^x equal e^x?&rdquo;
+                        </div>
+                      </button>
+                    </div>
                   </div>
                 )}
                 {sandboxMsgs.map((m, idx) => (
@@ -1544,45 +1620,81 @@ export default function PublicLearningHubPage() {
 
       {/* Non-Blocking Account Conversion Modal */}
       {signupModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 border border-slate-200">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="font-bold text-lg text-slate-900">
-                  Save Your Learning Streak &amp; Progress
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#F5921D] bg-[#F5921D]/10 px-2.5 py-0.5 rounded-full mb-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> 3 Free Queries Completed
+                </div>
+                <h3 className="font-extrabold text-lg text-[#1E225B]">
+                  You&apos;re on a roll! 🔥
                 </h3>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  Create a free Public Hub account to save flashcard intervals, unlock unlimited queries, and track XP.
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Sign up with Google to save your flashcards and unlock unlimited AI tutoring.
                 </p>
               </div>
-              <button onClick={() => setSignupModalOpen(false)} className="text-slate-400">
+              <button onClick={() => setSignupModalOpen(false)} className="text-slate-400 hover:text-slate-700 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleQuickSignup} className="space-y-3">
+
+            {/* Google SSO One-Click Action */}
+            <button
+              type="button"
+              onClick={async () => {
+                await api.ssoLogin({
+                  provider: 'google',
+                  email: 'samira.learner@gmail.com',
+                  firstName: 'Samira',
+                  lastName: 'Learner',
+                });
+                window.location.reload();
+              }}
+              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-300 shadow-xs transition-all text-xs sm:text-sm"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Sign up with Google</span>
+            </button>
+
+            <div className="relative my-3 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <span className="relative bg-white px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                — OR WITH EMAIL —
+              </span>
+            </div>
+
+            <form onSubmit={handleQuickSignup} className="space-y-2.5">
               <div className="grid grid-cols-2 gap-2">
                 <input
                   required
                   placeholder="First Name"
                   value={signupForm.firstName}
                   onChange={(e) => setSignupForm((p) => ({ ...p, firstName: e.target.value }))}
-                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                  className="border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
                 />
                 <input
                   required
                   placeholder="Last Name"
                   value={signupForm.lastName}
                   onChange={(e) => setSignupForm((p) => ({ ...p, lastName: e.target.value }))}
-                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                  className="border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
                 />
               </div>
               <input
                 required
                 type="email"
-                placeholder="Email"
+                placeholder="Email address"
                 value={signupForm.email}
                 onChange={(e) => setSignupForm((p) => ({ ...p, email: e.target.value }))}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
               />
               <input
                 required
@@ -1591,18 +1703,18 @@ export default function PublicLearningHubPage() {
                 placeholder="Password (min 6 chars)"
                 value={signupForm.password}
                 onChange={(e) => setSignupForm((p) => ({ ...p, password: e.target.value }))}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
               />
               <button
                 type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl text-sm"
+                className="w-full bg-[#1E225B] hover:bg-[#141740] text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition-colors"
               >
                 Create Free Account
               </button>
             </form>
-            <div className="text-center text-xs text-slate-500">
+            <div className="text-center text-xs text-slate-500 pt-1">
               Already have an account?{' '}
-              <Link href="/login" className="text-indigo-600 font-semibold">
+              <Link href="/login" className="text-[#1E225B] font-bold hover:underline">
                 Sign in here
               </Link>
             </div>
@@ -1644,6 +1756,77 @@ export default function PublicLearningHubPage() {
           </div>
         </div>
       )}
+
+      {/* ── Sleek Compact In-App Bottom Navigation Dock ── */}
+      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2.5 px-4 shadow-lg">
+        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs font-semibold">
+          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-0.5">
+            <button
+              type="button"
+              onClick={() => setActiveTab('sandbox')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0 ${
+                activeTab === 'sandbox' ? 'bg-[#1E225B] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Socratic Tutor</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('flashcards')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0 ${
+                activeTab === 'flashcards' ? 'bg-[#1E225B] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Flashcards</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('concepts')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0 ${
+                activeTab === 'concepts' ? 'bg-[#1E225B] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Network className="w-3.5 h-3.5" />
+              <span>Knowledge Map</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('quizzes')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0 ${
+                activeTab === 'quizzes' ? 'bg-[#1E225B] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>Practice Quizzes</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('whiteboards')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shrink-0 ${
+                activeTab === 'whiteboards' ? 'bg-[#1E225B] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <PenTool className="w-3.5 h-3.5" />
+              <span>Whiteboards</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0 ml-auto text-xs">
+            {user ? (
+              <span className="text-[11px] text-slate-500">
+                Logged in as <strong className="text-[#1E225B]">{user.firstName}</strong>
+              </span>
+            ) : (
+              <Link href="/login" className="text-[#1E225B] font-bold hover:underline flex items-center gap-1">
+                <span>Sign In to Save Progress</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

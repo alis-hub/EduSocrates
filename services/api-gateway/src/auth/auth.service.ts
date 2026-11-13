@@ -226,4 +226,99 @@ export class AuthService {
     );
     return rows[0];
   }
+
+  /**
+   * Single Sign-On (Google & LinkedIn).
+   * Maps incoming email domain to the corresponding school tenant in PostgreSQL,
+   * or defaults to Universal Public Hub tenant if domain is unmapped or public.
+   */
+  async ssoLogin(dto: {
+    provider: 'google' | 'linkedin';
+    email: string;
+    firstName?: string;
+    lastName?: string;
+  }) {
+    const email = dto.email.trim().toLowerCase();
+
+    // Check if user already exists
+    const existing = await this.db.query(
+      `SELECT u.*, s.id as school_id FROM users u
+       JOIN schools s ON s.id = u.school_id
+       WHERE LOWER(u.email) = $1 AND u.is_active = true
+       LIMIT 1`,
+      [email],
+    );
+
+    if (existing.length) {
+      return this.buildAuthResponse(existing[0]);
+    }
+
+    // Determine tenant domain routing
+    const domain = email.includes('@') ? email.split('@')[1] : '';
+    let targetSchoolId = PUBLIC_HUB_TENANT_ID;
+    let targetCampusId: string | null = null;
+    let role = 'INDEPENDENT_STUDENT';
+
+    if (
+      domain &&
+      domain !== 'gmail.com' &&
+      domain !== 'googlemail.com' &&
+      domain !== 'yahoo.com' &&
+      domain !== 'outlook.com' &&
+      domain !== 'hotmail.com'
+    ) {
+      const matchedSchool = await this.db.query(
+        `SELECT s.id, c.id as default_campus_id FROM schools s
+         LEFT JOIN campuses c ON c.school_id = s.id
+         WHERE LOWER(s.domain) = $1 AND s.subscription_status IN ('ACTIVE', 'TRIAL')
+         LIMIT 1`,
+        [domain.toLowerCase()],
+      );
+      if (matchedSchool.length) {
+        targetSchoolId = matchedSchool[0].id;
+        targetCampusId = matchedSchool[0].default_campus_id || null;
+        if (
+          dto.provider === 'linkedin' ||
+          email.includes('teacher') ||
+          email.includes('faculty') ||
+          email.includes('prof')
+        ) {
+          role = 'TEACHER';
+        } else {
+          role = 'STUDENT';
+        }
+      }
+    }
+
+    const firstName = dto.firstName?.trim() || email.split('@')[0] || 'User';
+    const lastName = dto.lastName?.trim() || (role === 'INDEPENDENT_STUDENT' ? 'Learner' : '');
+    const randomPass = await bcrypt.hash(`sso_${Math.random()}_${Date.now()}`, 10);
+
+    const user = await this.db.withTransaction(async (client) => {
+      await client.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [targetSchoolId]);
+      const ins = await client.query(
+        `INSERT INTO users (school_id, campus_id, role, email, password_hash, first_name, last_name, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE)
+         RETURNING *`,
+        [targetSchoolId, targetCampusId, role, email, randomPass, firstName, lastName],
+      );
+      const created = ins.rows[0];
+
+      if (role === 'STUDENT' || role === 'INDEPENDENT_STUDENT') {
+        await client.query(
+          `INSERT INTO student_gamification_profiles (user_id, current_streak, longest_streak, total_xp, badges)
+           VALUES ($1, 1, 1, 30, '["SSO Pioneer"]'::jsonb)
+           ON CONFLICT (user_id) DO NOTHING`,
+          [created.id],
+        );
+      }
+      return created;
+    });
+
+    return {
+      ...this.buildAuthResponse(user),
+      tenantRouted: targetSchoolId !== PUBLIC_HUB_TENANT_ID,
+      provider: dto.provider,
+    };
+  }
 }

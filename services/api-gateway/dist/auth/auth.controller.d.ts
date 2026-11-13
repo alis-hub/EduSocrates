@@ -12,6 +12,12 @@ declare class PublicSignupDto {
 declare class RedeemInviteDto {
     inviteCode: string;
 }
+declare class SsoLoginDto {
+    provider: 'google' | 'linkedin';
+    email: string;
+    firstName?: string;
+    lastName?: string;
+}
 declare class RegisterDto {
     email: string;
     password: string;
@@ -27,6 +33,31 @@ export declare class AuthController {
     login(dto: LoginDto): Promise<{
         accessToken: string;
         user: any;
+    }>;
+    ssoLogin(dto: SsoLoginDto): Promise<{
+        accessToken: string;
+        user: {
+            id: any;
+            email: any;
+            role: any;
+            firstName: any;
+            lastName: any;
+            schoolId: any;
+            campusId: any;
+        };
+    } | {
+        tenantRouted: boolean;
+        provider: "google" | "linkedin";
+        accessToken: string;
+        user: {
+            id: any;
+            email: any;
+            role: any;
+            firstName: any;
+            lastName: any;
+            schoolId: any;
+            campusId: any;
+        };
     }>;
     publicSignup(dto: PublicSignupDto): Promise<{
         accessToken: string;

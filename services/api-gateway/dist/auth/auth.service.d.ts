@@ -64,4 +64,34 @@ export declare class AuthService {
         email: string;
         role: string;
     }>;
+    ssoLogin(dto: {
+        provider: 'google' | 'linkedin';
+        email: string;
+        firstName?: string;
+        lastName?: string;
+    }): Promise<{
+        accessToken: string;
+        user: {
+            id: any;
+            email: any;
+            role: any;
+            firstName: any;
+            lastName: any;
+            schoolId: any;
+            campusId: any;
+        };
+    } | {
+        tenantRouted: boolean;
+        provider: "google" | "linkedin";
+        accessToken: string;
+        user: {
+            id: any;
+            email: any;
+            role: any;
+            firstName: any;
+            lastName: any;
+            schoolId: any;
+            campusId: any;
+        };
+    }>;
 }

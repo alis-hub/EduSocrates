@@ -7,7 +7,7 @@ Enterprise-grade academic management system with a defense-in-depth Socratic AI 
 ## About GuruMera
 
 ### What is GuruMera?
-**GuruMera** (*"Discover the Why!"*) is an intelligent educational platform designed both for **schools & districts** and for **independent self-learners worldwide**. At its core, it pairs multi-campus academic administration with a dedicated, pedagogical **Socratic AI Tutor** and a **Universal Public Learning Hub**.
+**GuruMera** (*"Discover the Why!"*) is an intelligent educational platform designed both for **schools & academies** and for **independent self-learners worldwide**. At its core, it pairs multi-campus academic administration with a dedicated, pedagogical **Socratic AI Tutor** and a **Universal Public Learning Hub**.
 
 Unlike conventional AI tools that generate answers or write essays on demand, GuruMera embeds the classical **Socratic Method** into every workflow. It engages learners through guided inquiry, progressive clues, thought-provoking questions, interactive math graphing, and concept-mapping checkpoints—building lasting problem-solving habits while actively preventing academic dishonesty.
 
@@ -25,7 +25,7 @@ GuruMera addresses both needs:
 
 ### Who Are the Intended Users?
 
-* **🏫 School & District Administrators**: Configure campuses, academic years, classes, sections, and subjects; manage rosters (individually or via bulk CSV); and issue school Invite Codes (`/admin`).
+* **🏫 School & Academy Administrators**: Configure campuses, academic years, classes, sections, and subjects; manage rosters (individually or via bulk CSV); and issue school Invite Codes (`/admin`).
 * **👩‍🏫 Teachers & Educators**: Publish coursework (`PRIVATE`, `UNLISTED`, or shared in the `PUBLIC_DIRECTORY`), attach grading rubrics and AI strictness rules, auto-generate editable Socratic flashcard decks from rubrics, launch collaborative assignment whiteboards, grade work, and inspect student-AI chat transcripts (`/teacher`).
 * **🎓 Enrolled School Students**: Manage deadlines, open coursework-linked Socratic tutors, collaborate on shared study whiteboards, and submit timed quizzes or assignments (`/student`).
 * **🌍 Independent & Public Learners**: Explore public flashcards, Socratic tutoring, code debugging, concept knowledge trees, practice quizzes, and STEM graphing immediately—starting anonymously for quick exploration or saving long-term streaks with a free account (`/hub`).
@@ -96,7 +96,7 @@ Supports **Google Gemini**, **OpenAI**, and a deterministic **Offline Mock Engin
 
 ### Summary of Benefits
 
-| For Schools & Districts | For Teachers | For Students & Self-Learners | For Parents |
+| For Schools & Academies | For Teachers | For Students & Self-Learners | For Parents |
 | :--- | :--- | :--- | :--- |
 | • Multi-tenant data isolation<br>• Self-serve 6-step onboarding<br>• Invite-code student funnel | • Granular AI strictness per task<br>• Auto-generated Socratic decks<br>• Live guardrail preview sandbox | • 24/7 Socratic coaching & code debug<br>• Spaced repetition, XP streaks & DAG maps<br>• Free public study bank | • Real-time deadline & grade visibility<br>• Transparent teacher feedback<br>• Academic integrity assurance |
 

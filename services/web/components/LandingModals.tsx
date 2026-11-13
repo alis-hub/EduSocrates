@@ -156,7 +156,7 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
 
                 {/* Institutional Tier */}
                 <div className="border-2 border-[#1E225B] rounded-2xl p-5 bg-[#FAF9F5] shadow-xs">
-                  <span className="text-xs font-bold text-[#F5921D] uppercase tracking-wider">Schools &amp; Districts</span>
+                  <span className="text-xs font-bold text-[#F5921D] uppercase tracking-wider">Schools &amp; Academies</span>
                   <h4 className="text-xl font-black text-[#1E225B] mt-1">Campus Enterprise</h4>
                   <p className="text-xs text-slate-500 mt-1 mb-4">Complete multi-campus digital management and pedagogical safety.</p>
                   <ul className="text-xs space-y-2 text-slate-600">
@@ -210,7 +210,7 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
                   <div>
                     <label className="text-xs font-semibold text-slate-600 block mb-1">Subject / Inquiry Type</label>
                     <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]">
-                      <option>School Onboarding &amp; District Deployment</option>
+                      <option>School Onboarding &amp; Academy Deployment</option>
                       <option>General Support / Question</option>
                       <option>Academic Integrity &amp; Pedagogy</option>
                       <option>Other</option>

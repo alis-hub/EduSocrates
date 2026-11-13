@@ -85,6 +85,23 @@ export const api = {
     return res;
   },
 
+  ssoLogin: async (data: {
+    provider: 'google' | 'linkedin';
+    email: string;
+    firstName?: string;
+    lastName?: string;
+  }) => {
+    const res = await apiFetch<{ accessToken: string; user: any; tenantRouted?: boolean }>(
+      '/auth/sso',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+    );
+    setStoredAuth(res.accessToken, res.user);
+    return res;
+  },
+
   redeemInvite: async (inviteCode: string) => {
     const res = await apiFetch<{ accessToken: string; user: any; schoolName: string }>(
       '/auth/redeem-invite',
