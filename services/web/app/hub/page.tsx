@@ -562,7 +562,7 @@ export default function PublicLearningHubPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
-              <BrandLogo variant="navbar" showTagline />
+              <BrandLogo variant="navbar" />
             </Link>
             <span className="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2.5 py-0.5 rounded-full">
               Public Learning Hub

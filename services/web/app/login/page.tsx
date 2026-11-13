@@ -68,7 +68,7 @@ export default function LoginPage() {
           <div className="mb-5 text-center">
             <BrandLogo variant="vertical" className="h-32 w-auto mx-auto mb-2" />
             <p className="mt-1 text-xs text-slate-600">
-              Multi-Tenant Academic Platform &amp; Public Socratic Learning Hub · v3.0
+              Multi-Tenant Academic Platform &amp; Public Socratic Learning Hub
             </p>
           </div>
 

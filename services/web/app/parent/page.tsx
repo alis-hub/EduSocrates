@@ -80,7 +80,7 @@ export default function ParentPortal() {
               <X className="w-4 h-4" />
             </button>
           )}
-          <BrandLogo variant="navbar" showTagline />
+          <BrandLogo variant="navbar" />
           <span className="ml-2 text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5">Parent</span>
         </div>
         <div className="flex items-center gap-4">

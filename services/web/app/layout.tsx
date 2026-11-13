@@ -10,7 +10,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "GuruMera v3.0 — Discover the Why!",
+  title: "GuruMera — Discover the Why!",
   description:
     "GuruMera: Multi-tenant educational platform & Public Socratic Learning Hub with defense-in-depth AI guidance.",
 };

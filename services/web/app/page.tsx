@@ -1,105 +1,593 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/BrandLogo';
+import { ProductPreviewMockup } from '@/components/ProductPreviewMockup';
+import { LandingModals, ModalType } from '@/components/LandingModals';
 import {
+  ArrowRight,
+  ArrowRightLeft,
+  CheckCircle2,
   Compass,
+  FileText,
   FlaskConical,
   GraduationCap,
+  HelpCircle,
   Layers,
+  Lock,
+  Mail,
+  Menu,
+  MessageSquare,
+  Network,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Star,
   Users,
+  X,
 } from 'lucide-react';
 
 export default function HomePage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FAF9F5] to-white text-[#1E225B]">
-      <header className="border-b border-[#E7E3D8] bg-white/90 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          <BrandLogo variant="navbar" showTagline showVersion />
-          <nav className="flex items-center gap-3 text-sm font-medium">
-            <Link href="/hub" className="text-slate-600 hover:text-[#1E225B] px-2 py-1">
+    <div className="min-h-screen bg-[#FAF9F5] text-[#1E225B] flex flex-col font-sans">
+      {/* ─── Header & Navigation ────────────────────────────────────────── */}
+      <header className="border-b border-[#E7E3D8] bg-white/95 backdrop-blur-md sticky top-0 z-30 transition-all">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6 py-3.5 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <BrandLogo variant="navbar" />
+          </Link>
+
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-5 text-sm font-semibold">
+            <Link
+              href="/hub"
+              className="text-slate-600 hover:text-[#1E225B] transition-colors"
+            >
               Public Hub
             </Link>
-            <Link href="/try-teacher" className="text-slate-600 hover:text-[#249EA0] px-2 py-1">
-              Try as Teacher
-            </Link>
-            <Link href="/schools" className="text-slate-600 hover:text-[#F5921D] px-2 py-1">
-              For Schools
+            <Link
+              href="/try-teacher"
+              className="text-slate-600 hover:text-[#249EA0] transition-colors"
+            >
+              Teacher Demo
             </Link>
             <Link
+              href="/schools"
+              className="text-slate-600 hover:text-[#F5921D] transition-colors"
+            >
+              For Schools
+            </Link>
+            <button
+              type="button"
+              onClick={() => setActiveModal('pricing')}
+              className="text-slate-600 hover:text-[#1E225B] transition-colors"
+            >
+              Pricing
+            </button>
+            <Link
               href="/login"
-              className="bg-[#1E225B] hover:bg-[#141740] text-white px-4 py-2 rounded-lg transition-colors"
+              className="bg-[#1E225B] hover:bg-[#141740] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md"
             >
               Sign In
             </Link>
           </nav>
+
+          {/* Mobile Menu Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-slate-700 hover:text-[#1E225B] rounded-lg transition-colors"
+            aria-label="Toggle Navigation Menu"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
+
+        {/* Collapsible Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-[#E7E3D8] bg-white px-6 py-5 space-y-4 shadow-lg animate-fadeIn">
+            <div className="flex flex-col space-y-3 text-sm font-semibold">
+              <Link
+                href="/hub"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between py-2 text-slate-700 hover:text-[#1E225B] border-b border-slate-100"
+              >
+                <span>Public Learning Hub</span>
+                <Compass className="w-4 h-4 text-[#F5921D]" />
+              </Link>
+              <Link
+                href="/try-teacher"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between py-2 text-slate-700 hover:text-[#249EA0] border-b border-slate-100"
+              >
+                <span>Teacher Sandbox Demo</span>
+                <FlaskConical className="w-4 h-4 text-[#249EA0]" />
+              </Link>
+              <Link
+                href="/schools"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between py-2 text-slate-700 hover:text-[#1E225B] border-b border-slate-100"
+              >
+                <span>For Schools &amp; Districts</span>
+                <GraduationCap className="w-4 h-4 text-[#1E225B]" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setActiveModal('pricing');
+                }}
+                className="flex items-center justify-between py-2 text-slate-700 hover:text-[#1E225B] border-b border-slate-100 text-left"
+              >
+                <span>Plans &amp; Pricing</span>
+                <Sparkles className="w-4 h-4 text-amber-500" />
+              </button>
+            </div>
+            <div className="pt-2">
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full block text-center bg-[#1E225B] hover:bg-[#141740] text-white py-2.5 rounded-xl font-bold text-sm shadow-sm"
+              >
+                Sign In / Free Sign Up
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-14">
-        <div className="text-center max-w-3xl mx-auto mb-14">
-          <BrandLogo variant="horizontal" className="h-24 w-auto mx-auto mb-5" />
-          <div className="inline-flex items-center gap-2 bg-[#F5921D]/10 border border-[#F5921D]/30 text-[#DC7B0C] px-3.5 py-1.5 rounded-full text-xs font-semibold mb-5">
-            <Sparkles className="w-3.5 h-3.5" />
-            GuruMera v3.0 · 5-Layer Guardrailed Socratic Learning
+      {/* ─── Hero Section ──────────────────────────────────────────────── */}
+      <section className="pt-12 md:pt-16 pb-12 px-5 sm:px-6 relative overflow-hidden">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Hero Tagline Display */}
+          <div className="inline-block mb-3">
+            <span className="text-sm md:text-base font-bold uppercase tracking-widest text-[#F5921D] px-3.5 py-1 rounded-full bg-[#F5921D]/10 border border-[#F5921D]/20">
+              – Discover the Why! –
+            </span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#1E225B] mb-5">
+
+          {/* Hero Eyebrow */}
+          <div className="mt-2 mb-4">
+            <span className="inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-slate-600 bg-white border border-[#E7E3D8] px-4 py-1.5 rounded-full shadow-2xs">
+              <Sparkles className="w-4 h-4 text-[#F5921D]" />
+              The AI Learning Hub for Independent Minds &amp; Forward-Thinking Schools
+            </span>
+          </div>
+
+          {/* H1 Headline (Exact) */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#1E225B] leading-[1.15] mb-5">
             AI That Guides Discovery — Never Hands Over the Answer
           </h1>
-          <p className="text-lg text-slate-600 leading-relaxed mb-8">
-            Explore interactive Socratic tutoring, spaced-repetition flashcards, mastery concept maps,
-            and live collaborative STEM whiteboards in the Public Hub — or onboard your school in minutes.
+
+          {/* Hero Description */}
+          <p className="text-base sm:text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed mb-8">
+            Master any subject with interactive Socratic tutoring and smart study tools. Join the Public Hub as an independent learner, or bring your entire classroom onboard in minutes.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
+
+          {/* CTA Hierarchy Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-xl mx-auto mb-10">
+            {/* Primary Action (Solid, Bold, Prominent) */}
             <Link
               href="/hub"
-              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl shadow-sm transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#F5921D] hover:bg-[#DC7B0C] text-white font-bold text-sm md:text-base px-7 py-3.5 rounded-xl shadow-lg shadow-[#F5921D]/25 transition-all transform hover:-translate-y-0.5"
             >
-              <Compass className="w-4 h-4" /> Open Public Learning Hub
+              <Compass className="w-5 h-5" />
+              <span>Start Learning for Free</span>
+              <ArrowRight className="w-4 h-4 ml-0.5" />
+            </Link>
+
+            {/* Secondary Action 1 (Outlined / Ghost) */}
+            <Link
+              href="/try-teacher"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-[#1E225B] border border-slate-300 font-semibold text-sm md:text-base px-5 py-3.5 rounded-xl transition-all hover:border-[#249EA0] hover:text-[#249EA0] shadow-2xs"
+            >
+              <FlaskConical className="w-4 h-4 text-[#249EA0]" />
+              <span>Try the Teacher Demo</span>
+            </Link>
+
+            {/* Secondary Action 2 (Outlined / Ghost) */}
+            <Link
+              href="/schools"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-[#1E225B] border border-slate-300 font-semibold text-sm md:text-base px-5 py-3.5 rounded-xl transition-all hover:border-[#1E225B] shadow-2xs"
+            >
+              <GraduationCap className="w-4 h-4 text-[#1E225B]" />
+              <span>For Schools &amp; Districts</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* ─── Product Visuals (Show, Don't Tell!) ────────────────────────── */}
+        <div className="relative">
+          <div className="absolute inset-0 max-w-4xl mx-auto bg-gradient-to-r from-[#249EA0]/10 via-[#F5921D]/10 to-[#1E225B]/10 rounded-3xl blur-2xl transform -translate-y-4 -z-10" />
+          <ProductPreviewMockup />
+        </div>
+      </section>
+
+      {/* ─── Trust Anchors & Metrics Bar ───────────────────────────────── */}
+      <section className="border-y border-[#E7E3D8] bg-white py-6 px-4">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-around gap-6 text-xs md:text-sm font-semibold text-slate-600">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#249EA0]" />
+            <span>Built for FERPA &amp; COPPA Compliance</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#F5921D]" />
+            <span>Powered by Google Gemini AI</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-[#1E225B]" />
+            <span>100% Student Privacy (Zero Ad Tracking)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>Zero Direct-Answer Leak Guarantee</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Feature Cards Scannability & Impact ─────────────────────────── */}
+      <section className="py-16 md:py-20 px-5 sm:px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-xs font-bold text-[#F5921D] uppercase tracking-wider">
+              Engineered for Real Understanding
+            </span>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1E225B] mt-1.5">
+              Why Educators &amp; Motivated Learners Choose GuruMera
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Feature 1: Academic Integrity */}
+            <div className="group bg-white border border-slate-200/90 rounded-2xl p-7 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-[#1E225B]/10 text-[#1E225B] flex items-center justify-center mb-5 group-hover:bg-[#1E225B] group-hover:text-white transition-colors duration-300">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-[#1E225B] mb-2.5">
+                  Enterprise-Grade Academic Integrity
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Our multi-layer defense system prevents cheating and answer-skipping, ensuring students do the real cognitive work required for mastery.
+                </p>
+              </div>
+              <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap gap-1.5 text-[11px] font-medium text-slate-500">
+                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">Injection Shielding</span>
+                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">Answer-Key Defense</span>
+              </div>
+            </div>
+
+            {/* Feature 2: All-in-One Study Toolkit */}
+            <div className="group bg-white border border-slate-200/90 rounded-2xl p-7 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-[#F5921D]/15 text-[#DC7B0C] flex items-center justify-center mb-5 group-hover:bg-[#F5921D] group-hover:text-white transition-colors duration-300">
+                  <Layers className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-[#1E225B] mb-2.5">
+                  An All-in-One Study Toolkit
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Everything a student needs in one place: intelligent flashcards, visual knowledge maps, collaborative whiteboards, and a guided STEM code debugger.
+                </p>
+              </div>
+              <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap gap-1.5 text-[11px] font-medium text-slate-500">
+                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">SM-2 Repetition</span>
+                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">Live Whiteboards</span>
+              </div>
+            </div>
+
+            {/* Feature 3: Learning Continuity */}
+            <div className="group bg-white border border-slate-200/90 rounded-2xl p-7 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-[#249EA0]/15 text-[#249EA0] flex items-center justify-center mb-5 group-hover:bg-[#249EA0] group-hover:text-white transition-colors duration-300">
+                  <ArrowRightLeft className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-[#1E225B] mb-2.5">
+                  Seamless Learning Continuity
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Start learning independently today. If your school joins later, instantly link your accounts without ever losing your progress, streaks, or earned XP.
+                </p>
+              </div>
+              <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap gap-1.5 text-[11px] font-medium text-slate-500">
+                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">Invite-Code Sync</span>
+                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">Continuous XP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── How It Works (Visual Graphic) ─────────────────────────────── */}
+      <section className="py-16 bg-white border-y border-[#E7E3D8] px-5 sm:px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <span className="text-xs font-bold text-[#249EA0] uppercase tracking-wider">
+              The Pedagogical Journey
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1E225B] mt-1">
+              How Socratic Tutoring Works
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            {/* Step 1 */}
+            <div className="text-center space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-[#1E225B] text-white flex items-center justify-center mx-auto text-xl font-black shadow-md">
+                1
+              </div>
+              <h3 className="font-bold text-[#1E225B] text-base">Inquire &amp; Explore</h3>
+              <p className="text-xs md:text-sm text-slate-600 leading-relaxed">
+                Bring any challenging problem from calculus, physics, chemistry, or code. No answer keys required.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="text-center space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-[#F5921D] text-white flex items-center justify-center mx-auto text-xl font-black shadow-md">
+                2
+              </div>
+              <h3 className="font-bold text-[#1E225B] text-base">Guided Cognitive Discovery</h3>
+              <p className="text-xs md:text-sm text-slate-600 leading-relaxed">
+                The AI diagnoses misconceptions, provides progressive hints, and poses guiding questions so you take the next step.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="text-center space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-[#249EA0] text-white flex items-center justify-center mx-auto text-xl font-black shadow-md">
+                3
+              </div>
+              <h3 className="font-bold text-[#1E225B] text-base">Mastery &amp; School Sync</h3>
+              <p className="text-xs md:text-sm text-slate-600 leading-relaxed">
+                Lock in concepts with spaced-repetition flashcards and knowledge tree checkpoints. Progress carries over if your school joins.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Social Proof & Testimonials ───────────────────────────────── */}
+      <section className="py-16 md:py-20 px-5 sm:px-6 bg-[#FAF9F5]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <span className="text-xs font-bold text-[#1E225B] uppercase tracking-wider">
+              Trusted by Educators &amp; Learners
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1E225B] mt-1">
+              What Our Community Says
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Testimonial 1: Teacher */}
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-1 text-[#F5921D] mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-current" />
+                  ))}
+                </div>
+                <p className="text-sm text-slate-700 italic leading-relaxed mb-4">
+                  &ldquo;GuruMera changed the game in AP Physics. Students stopped copying AI answers and started actually understanding the derivations before class.&rdquo;
+                </p>
+              </div>
+              <div className="pt-4 border-t border-slate-100">
+                <div className="font-bold text-[#1E225B] text-sm">Dr. Elena Torres</div>
+                <div className="text-xs text-slate-500">AP Physics Lead, Horizon High</div>
+              </div>
+            </div>
+
+            {/* Testimonial 2: Student */}
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-1 text-[#F5921D] mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-current" />
+                  ))}
+                </div>
+                <p className="text-sm text-slate-700 italic leading-relaxed mb-4">
+                  &ldquo;Instead of feeling stuck or just reading an answer key, the Socratic hints helped me figure out calculus by myself. The feeling when you solve it yourself is unmatched.&rdquo;
+                </p>
+              </div>
+              <div className="pt-4 border-t border-slate-100">
+                <div className="font-bold text-[#1E225B] text-sm">Marcus K.</div>
+                <div className="text-xs text-slate-500">Independent High School Learner</div>
+              </div>
+            </div>
+
+            {/* Testimonial 3: Administrator */}
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-1 text-[#F5921D] mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-current" />
+                  ))}
+                </div>
+                <p className="text-sm text-slate-700 italic leading-relaxed mb-4">
+                  &ldquo;The multi-tenant school onboarding took less than 10 minutes, and the audit logs give our academic board full compliance confidence.&rdquo;
+                </p>
+              </div>
+              <div className="pt-4 border-t border-slate-100">
+                <div className="font-bold text-[#1E225B] text-sm">David Chen</div>
+                <div className="text-xs text-slate-500">District EdTech Director</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Call to Action Banner ──────────────────────────────────────── */}
+      <section className="bg-gradient-to-r from-[#1E225B] to-[#141740] text-white py-14 px-5 sm:px-6">
+        <div className="max-w-4xl mx-auto text-center space-y-5">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">
+            Ready to Discover the Why?
+          </h2>
+          <p className="text-slate-300 text-sm md:text-base max-w-xl mx-auto">
+            Experience the difference of AI designed for true cognitive growth. Join thousands of students and schools today.
+          </p>
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/hub"
+              className="bg-[#F5921D] hover:bg-[#DC7B0C] text-white font-bold px-7 py-3 rounded-xl transition-all shadow-md"
+            >
+              Start Learning for Free
             </Link>
             <Link
               href="/try-teacher"
-              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl shadow-sm transition-colors"
+              className="bg-white/10 hover:bg-white/20 text-white font-semibold px-5 py-3 rounded-xl border border-white/20 transition-all"
             >
-              <FlaskConical className="w-4 h-4" /> Try Teacher Sandbox (2h Demo)
-            </Link>
-            <Link
-              href="/schools"
-              className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-semibold px-6 py-3 rounded-xl transition-colors"
-            >
-              <GraduationCap className="w-4 h-4" /> Onboard Your School
+              Try Teacher Sandbox (2h Demo)
             </Link>
           </div>
         </div>
+      </section>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            {
-              icon: ShieldCheck,
-              title: '5-Layer Anti-Cheat AI Guardrails',
-              desc: 'Prompt-injection defense, intent routing, and server-side answer-key shielding ensure real conceptual mastery.',
-            },
-            {
-              icon: Layers,
-              title: '7 Public STEM & Study Tools',
-              desc: 'Socratic Sandbox, Code Debugger, SM-2 Flashcards, Knowledge Maps, Misconception Quizzes, Grapher, and Whiteboards.',
-            },
-            {
-              icon: Users,
-              title: 'Seamless Hub-to-School Migration',
-              desc: 'Start as an independent learner in the Public Hub and join any school later via Invite Code without losing streaks or XP.',
-            },
-          ].map((f) => (
-            <div key={f.title} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-                <f.icon className="w-5 h-5" />
+      {/* ─── Comprehensive Expanded Footer ──────────────────────────────── */}
+      <footer className="mt-auto bg-[#1E225B] text-slate-300 border-t border-slate-800 text-xs">
+        <div className="max-w-6xl mx-auto px-6 pt-12 pb-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+            {/* Column 1: Brand & Mission */}
+            <div className="col-span-2 space-y-3">
+              <div className="flex items-center gap-2">
+                <img
+                  src="/brand/logo-icon.jpg"
+                  alt="GuruMera"
+                  className="w-8 h-8 rounded-lg bg-white p-0.5 object-contain"
+                />
+                <span className="text-xl font-bold text-white tracking-tight">GuruMera</span>
               </div>
-              <h2 className="font-bold text-slate-900 mb-2">{f.title}</h2>
-              <p className="text-sm text-slate-600 leading-relaxed">{f.desc}</p>
+              <p className="text-xs font-semibold text-[#F5921D] tracking-wide">
+                – Discover the Why! –
+              </p>
+              <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
+                The multi-tenant academic platform and Public Socratic Learning Hub built to inspire curiosity, prevent cheating, and nurture lifelong independent problem-solving.
+              </p>
             </div>
-          ))}
+
+            {/* Column 2: Product */}
+            <div className="space-y-2">
+              <h4 className="font-bold text-white text-xs uppercase tracking-wider">Product</h4>
+              <ul className="space-y-1.5 text-slate-400">
+                <li><Link href="/hub" className="hover:text-white transition-colors">Public Learning Hub</Link></li>
+                <li><Link href="/hub" className="hover:text-white transition-colors">Socratic AI Tutor</Link></li>
+                <li><Link href="/hub" className="hover:text-white transition-colors">2-Tier Flashcards</Link></li>
+                <li><Link href="/hub" className="hover:text-white transition-colors">Knowledge Maps</Link></li>
+                <li><Link href="/hub" className="hover:text-white transition-colors">Peer Whiteboards</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Solutions */}
+            <div className="space-y-2">
+              <h4 className="font-bold text-white text-xs uppercase tracking-wider">Solutions</h4>
+              <ul className="space-y-1.5 text-slate-400">
+                <li><Link href="/hub" className="hover:text-white transition-colors">Independent Learners</Link></li>
+                <li><Link href="/try-teacher" className="hover:text-white transition-colors">Teacher Sandbox</Link></li>
+                <li><Link href="/schools" className="hover:text-white transition-colors">Schools &amp; Districts</Link></li>
+                <li><Link href="/parent" className="hover:text-white transition-colors">Parents &amp; Guardians</Link></li>
+                <li><Link href="/login" className="hover:text-white transition-colors">Demo Credentials</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 4: Compliance & Support */}
+            <div className="space-y-2">
+              <h4 className="font-bold text-white text-xs uppercase tracking-wider">Trust &amp; Legal</h4>
+              <ul className="space-y-1.5 text-slate-400">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal('privacy')}
+                    className="hover:text-white text-left transition-colors"
+                  >
+                    FERPA &amp; COPPA Policy
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal('terms')}
+                    className="hover:text-white text-left transition-colors"
+                  >
+                    Terms &amp; Academic Integrity
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal('pricing')}
+                    className="hover:text-white text-left transition-colors"
+                  >
+                    Plans &amp; Pricing
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal('faq')}
+                    className="hover:text-white text-left transition-colors"
+                  >
+                    Help Center &amp; FAQ
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal('contact')}
+                    className="hover:text-white text-left transition-colors"
+                  >
+                    Contact Support
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Copyright Bar */}
+          <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-400 text-[11px]">
+            <div>Copyright &copy; 2026 GuruMera. All rights reserved.</div>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setActiveModal('privacy')}
+                className="hover:text-white transition-colors"
+              >
+                Privacy
+              </button>
+              <span>&bull;</span>
+              <button
+                type="button"
+                onClick={() => setActiveModal('terms')}
+                className="hover:text-white transition-colors"
+              >
+                Terms
+              </button>
+              <span>&bull;</span>
+              <button
+                type="button"
+                onClick={() => setActiveModal('faq')}
+                className="hover:text-white transition-colors"
+              >
+                FAQ
+              </button>
+              <span>&bull;</span>
+              <button
+                type="button"
+                onClick={() => setActiveModal('contact')}
+                className="hover:text-white transition-colors"
+              >
+                Contact
+              </button>
+            </div>
+          </div>
         </div>
-      </main>
+      </footer>
+
+      {/* ─── Informational & Compliance Modals ───────────────────────────── */}
+      <LandingModals activeModal={activeModal} onClose={() => setActiveModal(null)} />
     </div>
   );
 }

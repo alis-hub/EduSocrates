@@ -139,7 +139,7 @@ export default function TryTeacherSandboxPage() {
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/hub" className="flex items-center gap-2 font-bold text-slate-900">
-            <BrandLogo variant="navbar" showTagline />
+            <BrandLogo variant="navbar" />
           </Link>
           <span className="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
             <FlaskConical className="w-3.5 h-3.5" /> Try as a Teacher (2h Ephemeral Sandbox)

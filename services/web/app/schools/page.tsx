@@ -94,7 +94,7 @@ export default function SchoolsPortalPage() {
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/hub" className="flex items-center gap-2 font-bold text-slate-900">
-            <BrandLogo variant="navbar" showTagline />
+            <BrandLogo variant="navbar" />
           </Link>
           <span className="text-xs bg-purple-100 text-purple-700 px-2.5 py-0.5 rounded-full font-semibold">
             Schools &amp; Onboarding

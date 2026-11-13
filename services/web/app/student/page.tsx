@@ -196,7 +196,7 @@ export default function StudentDashboard() {
               <X className="w-4 h-4" />
             </button>
           )}
-          <BrandLogo variant="navbar" showTagline />
+          <BrandLogo variant="navbar" />
           <span className="ml-2 text-xs bg-emerald-100 text-emerald-700 rounded-full px-2 py-0.5">Student</span>
         </div>
         <div className="flex items-center gap-4">
