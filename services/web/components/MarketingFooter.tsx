@@ -34,11 +34,12 @@ export function MarketingFooter() {
             <div className="space-y-2">
               <h4 className="font-bold text-white text-xs uppercase tracking-wider">Product</h4>
               <ul className="space-y-1.5 text-slate-400">
+                <li><Link href="/features" className="hover:text-white transition-colors font-medium text-slate-300">All Features</Link></li>
                 <li><Link href="/hub" className="hover:text-white transition-colors">Public Learning Hub</Link></li>
-                <li><Link href="/hub" className="hover:text-white transition-colors">Socratic AI Tutor</Link></li>
-                <li><Link href="/hub" className="hover:text-white transition-colors">2-Tier Flashcards</Link></li>
-                <li><Link href="/hub" className="hover:text-white transition-colors">Knowledge Maps</Link></li>
-                <li><Link href="/hub" className="hover:text-white transition-colors">Peer Whiteboards</Link></li>
+                <li><Link href="/features/socratic-tutor" className="hover:text-white transition-colors">Socratic AI Tutor</Link></li>
+                <li><Link href="/features/flashcards" className="hover:text-white transition-colors">2-Tier Flashcards</Link></li>
+                <li><Link href="/features/knowledge-maps" className="hover:text-white transition-colors">Knowledge Maps</Link></li>
+                <li><Link href="/features/peer-whiteboards" className="hover:text-white transition-colors">Peer Whiteboards</Link></li>
               </ul>
             </div>
 
@@ -49,6 +50,7 @@ export function MarketingFooter() {
                 <li><Link href="/hub" className="hover:text-white transition-colors">Independent Learners</Link></li>
                 <li><Link href="/try-teacher" className="hover:text-white transition-colors">Teacher Sandbox</Link></li>
                 <li><Link href="/schools" className="hover:text-white transition-colors">Schools &amp; Academies</Link></li>
+                <li><Link href="/school-demo" className="hover:text-white transition-colors">School Demo (2 Campuses)</Link></li>
                 <li><Link href="/parents" className="hover:text-white transition-colors">For Parents</Link></li>
                 <li><Link href="/parent-demo" className="hover:text-white transition-colors">Parent Demo</Link></li>
                 <li><Link href="/pricing" className="hover:text-white transition-colors">Plans &amp; Pricing</Link></li>

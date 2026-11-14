@@ -62,13 +62,33 @@ export function setStoredAuth(accessToken: string, user: any) {
 
 export const api = {
   // ── Auth ──────────────────────────────────────────────────────────────── //
-  login: async (email: string, password: string) => {
-    const res = await apiFetch<{ accessToken: string; user: any }>('/auth/login', {
+  login: async (email: string, password: string, mfaCode?: string) => {
+    const res = await apiFetch<any>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, ...(mfaCode ? { mfaCode } : {}) }),
     });
-    setStoredAuth(res.accessToken, res.user);
+    if (res.accessToken) {
+      setStoredAuth(res.accessToken, res.user);
+    }
     return res;
+  },
+
+  verifyMfa: async (tempToken: string, code: string) => {
+    const res = await apiFetch<{ accessToken: string; user: any }>('/auth/verify-mfa', {
+      method: 'POST',
+      body: JSON.stringify({ tempToken, code }),
+    });
+    if (res.accessToken) {
+      setStoredAuth(res.accessToken, res.user);
+    }
+    return res;
+  },
+
+  requestRecovery: async (email: string) => {
+    return apiFetch<{ success: boolean; message: string }>('/auth/request-recovery', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
   },
 
   publicSignup: async (data: {
@@ -86,7 +106,7 @@ export const api = {
   },
 
   ssoLogin: async (data: {
-    provider: 'google' | 'linkedin';
+    provider: 'google' | 'linkedin' | 'microsoft';
     email: string;
     firstName?: string;
     lastName?: string;
@@ -100,6 +120,18 @@ export const api = {
     );
     setStoredAuth(res.accessToken, res.user);
     return res;
+  },
+
+  resetDemoState: async () => {
+    return apiFetch<{ success: boolean; message: string; tenant: string }>('/auth/demo/reset', {
+      method: 'POST',
+    });
+  },
+
+  revokeOtherSessions: async () => {
+    return apiFetch<{ success: boolean; message: string }>('/auth/sessions/revoke-others', {
+      method: 'POST',
+    });
   },
 
   redeemInvite: async (inviteCode: string) => {
@@ -328,6 +360,7 @@ export const api = {
   // ── Universal Public Learning Hub & Onboarding ────────────────────────── //
   hub: {
     getPublicSchools: () => apiFetch<{ schools: any[] }>('/public/schools'),
+    getSchoolDemo: () => apiFetch<any>('/public/school-demo'),
     submitSchoolLead: (data: {
       requesterEmail: string;
       schoolName: string;
@@ -348,6 +381,14 @@ export const api = {
       sectionName?: string;
       subjectName: string;
       inviteCode?: string;
+      secondaryCampusName?: string;
+      secondaryCampusCity?: string;
+      brandingColor?: string;
+      subdomain?: string;
+      aiGuidanceMode?: string;
+      retentionPolicy?: string;
+      ssoGoogle?: boolean;
+      ssoMicrosoft?: boolean;
     }) => {
       const res = await apiFetch<{ accessToken: string; user: any; provisioned: any }>(
         '/onboarding/wizard',

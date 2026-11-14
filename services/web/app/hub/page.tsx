@@ -161,6 +161,28 @@ export default function PublicLearningHubPage() {
     const stored = getStoredUser();
     setUser(stored);
 
+    // Deep-link initial tab selection from query params (e.g. /hub?tab=flashcards)
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab') as HubTab | null;
+        const validTabs: HubTab[] = [
+          'sandbox',
+          'code',
+          'flashcards',
+          'concepts',
+          'quizzes',
+          'grapher',
+          'discussions',
+          'whiteboards',
+          'coursework',
+        ];
+        if (tabParam && validTabs.includes(tabParam)) {
+          setActiveTab(tabParam);
+        }
+      } catch {}
+    }
+
     // Load anonymous localStorage state
     try {
       const raw = localStorage.getItem(ANON_STORAGE_KEY);

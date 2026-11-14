@@ -45,6 +45,12 @@ export default function HomePage() {
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-5 text-sm font-semibold">
             <Link
+              href="/features"
+              className="text-slate-600 hover:text-[#F5921D] transition-colors"
+            >
+              Features
+            </Link>
+            <Link
               href="/hub"
               className="text-slate-600 hover:text-[#1E225B] transition-colors"
             >
@@ -98,6 +104,14 @@ export default function HomePage() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-[#E7E3D8] bg-white px-6 py-5 space-y-4 shadow-lg animate-fadeIn">
             <div className="flex flex-col space-y-3 text-sm font-semibold">
+              <Link
+                href="/features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between py-2 text-slate-700 hover:text-[#F5921D] border-b border-slate-100"
+              >
+                <span>Product Features</span>
+                <Sparkles className="w-4 h-4 text-[#F5921D]" />
+              </Link>
               <Link
                 href="/hub"
                 onClick={() => setMobileMenuOpen(false)}
@@ -263,8 +277,10 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap gap-1.5 text-[11px] font-medium text-slate-500">
-                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">Injection Shielding</span>
-                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">Answer-Key Defense</span>
+                <Link href="/features/socratic-tutor" className="bg-slate-100 hover:bg-[#1E225B] hover:text-white transition-colors px-2.5 py-0.5 rounded-full">
+                  Socratic AI Tutor
+                </Link>
+                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">Anti-Cheating Guardrails</span>
               </div>
             </div>
 
@@ -282,8 +298,15 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap gap-1.5 text-[11px] font-medium text-slate-500">
-                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">SM-2 Repetition</span>
-                <span className="bg-slate-100 px-2.5 py-0.5 rounded-full">Live Whiteboards</span>
+                <Link href="/features/flashcards" className="bg-slate-100 hover:bg-[#F5921D] hover:text-white transition-colors px-2.5 py-0.5 rounded-full">
+                  2-Tier Flashcards
+                </Link>
+                <Link href="/features/knowledge-maps" className="bg-slate-100 hover:bg-[#249EA0] hover:text-white transition-colors px-2.5 py-0.5 rounded-full">
+                  Knowledge Maps
+                </Link>
+                <Link href="/features/peer-whiteboards" className="bg-slate-100 hover:bg-[#1E225B] hover:text-white transition-colors px-2.5 py-0.5 rounded-full">
+                  Peer Whiteboards
+                </Link>
               </div>
             </div>
 
@@ -449,6 +472,12 @@ export default function HomePage() {
               className="bg-white/10 hover:bg-white/20 text-white font-semibold px-5 py-3 rounded-xl border border-white/20 transition-all"
             >
               Try Teacher Sandbox (2h Demo)
+            </Link>
+            <Link
+              href="/school-demo"
+              className="bg-white/10 hover:bg-white/20 text-white font-semibold px-5 py-3 rounded-xl border border-white/20 transition-all"
+            >
+              School Demo (2 Campuses)
             </Link>
           </div>
         </div>

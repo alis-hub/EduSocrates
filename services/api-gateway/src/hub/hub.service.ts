@@ -65,6 +65,144 @@ export class HubService {
     return { schools: rows };
   }
 
+  async getSchoolDemo() {
+    return {
+      school: {
+        id: '11111111-1111-4111-a111-111111111111',
+        name: 'Horizon International Academy',
+        slug: 'horizon-academy',
+        domain: 'horizon.edu',
+        subscriptionStatus: 'ACTIVE',
+        complianceStatus: 'FERPA & COPPA Certified',
+        ferpaScore: 98.4,
+        establishedYear: 2018,
+        totalEnrolled: 1240,
+        totalTeachers: 48,
+        totalCampuses: 2,
+        socraticReasoningIndex: 89.2,
+      },
+      campuses: [
+        {
+          id: 'c1111111-1111-4111-a111-111111111111',
+          name: 'Main Campus - North',
+          address: '100 Horizon Blvd, North City, TX',
+          studentsCount: 840,
+          facultyCount: 32,
+          classroomsCount: 28,
+          headAdministrator: 'Dr. Sarah Jenkins',
+        },
+        {
+          id: 'c1111111-1111-4111-a111-111111111112',
+          name: 'South Innovation Center',
+          address: '200 Horizon Way, South City, TX',
+          studentsCount: 400,
+          facultyCount: 16,
+          classroomsCount: 14,
+          headAdministrator: 'Arthur Vance',
+        },
+      ],
+      classes: [
+        {
+          id: 'b1111111-1111-4111-a111-111111111111',
+          name: 'Grade 10',
+          code: 'G10',
+          campusName: 'Main Campus - North',
+          sections: [
+            { id: 'd1111111-1111-4111-a111-111111111111', name: 'Section A', capacity: 30, enrolled: 28, teacher: 'Dr. Marcus Vance', subject: 'AP Physics 1' },
+            { id: 'd1111111-1111-4111-a111-111111111112', name: 'Section B', capacity: 30, enrolled: 26, teacher: 'Dr. Marcus Vance', subject: 'AP Physics 1' },
+          ],
+        },
+        {
+          id: 'b1111111-1111-4111-a111-111111111112',
+          name: 'Grade 11',
+          code: 'G11',
+          campusName: 'South Innovation Center',
+          sections: [
+            { id: 'd1111111-1111-4111-a111-111111111113', name: 'Section Honors', capacity: 25, enrolled: 24, teacher: 'Elena Rostova', subject: 'Calculus AB' },
+          ],
+        },
+        {
+          id: 'b1111111-1111-4111-a111-111111111113',
+          name: 'Grade 12',
+          code: 'G12',
+          campusName: 'Main Campus - North',
+          sections: [
+            { id: 'd1111111-1111-4111-a111-111111111114', name: 'Section AP', capacity: 25, enrolled: 22, teacher: 'Dr. Sarah Jenkins', subject: 'Advanced Chemistry' },
+          ],
+        },
+      ],
+      teachers: [
+        { id: '11111111-1111-4111-a111-111111110002', name: 'Dr. Marcus Vance', email: 'teacher.physics@horizon.edu', department: 'Science & Physics', activeSections: 3, studentsTaught: 78, guidanceMode: 'SOCRATIC_STRICT' },
+        { id: '11111111-1111-4111-a111-111111110006', name: 'Elena Rostova', email: 'elena.math@horizon.edu', department: 'Mathematics', activeSections: 2, studentsTaught: 54, guidanceMode: 'SOCRATIC_STRICT' },
+        { id: '11111111-1111-4111-a111-111111110001', name: 'Dr. Sarah Jenkins', email: 'admin@horizon.edu', department: 'Administration / Chemistry', activeSections: 1, studentsTaught: 22, guidanceMode: 'SOCRATIC_STRICT' },
+      ],
+      sampleAssignments: [
+        {
+          id: 'ca111111-1111-4111-a111-111111111111',
+          title: 'Newtonian Dynamics & Conservation of Momentum',
+          subject: 'AP Physics 1',
+          classSection: 'Grade 10 · Section A',
+          dueDate: '2026-11-20',
+          type: 'HOMEWORK',
+          submissionsCount: 26,
+          totalStudents: 28,
+          averageScore: 88.5,
+          guidanceMode: 'SOCRATIC_STRICT',
+          status: 'ACTIVE',
+        },
+        {
+          id: 'ca111111-1111-4111-a111-111111111112',
+          title: 'Fundamental Theorem of Calculus & Definite Integrals',
+          subject: 'Calculus AB',
+          classSection: 'Grade 11 · Section Honors',
+          dueDate: '2026-11-22',
+          type: 'QUIZ',
+          submissionsCount: 24,
+          totalStudents: 24,
+          averageScore: 91.2,
+          guidanceMode: 'SOCRATIC_STRICT',
+          status: 'ACTIVE',
+        },
+        {
+          id: 'ca111111-1111-4111-a111-111111111113',
+          title: 'Chemical Equilibrium & Le Chatelier Principle',
+          subject: 'Advanced Chemistry',
+          classSection: 'Grade 12 · Section AP',
+          dueDate: '2026-11-25',
+          type: 'ASSIGNMENT',
+          submissionsCount: 21,
+          totalStudents: 22,
+          averageScore: 85.0,
+          guidanceMode: 'SOCRATIC_HINTS_ONLY',
+          status: 'ACTIVE',
+        },
+      ],
+      analytics: {
+        weeklyStudyHours: 1420,
+        averageMastery: 87.4,
+        socraticInteractions: 4120,
+        directAnswersBlocked: 4120,
+        promptInjectionsDeflected: 48,
+        gradeDistribution: [
+          { grade: 'A (90-100%)', count: 520, percent: 42 },
+          { grade: 'B (80-89%)', count: 480, percent: 39 },
+          { grade: 'C (70-79%)', count: 180, percent: 14 },
+          { grade: 'D/F (<70%)', count: 60, percent: 5 },
+        ],
+        strugglingTopics: [
+          { topic: 'Inelastic Collisions in 2D', subject: 'AP Physics 1', affectedStudents: 6 },
+          { topic: 'Chain Rule for Trigonometric Composition', subject: 'Calculus AB', affectedStudents: 4 },
+        ],
+      },
+      accounts: {
+        admin: { name: 'Sarah Jenkins', email: 'admin@horizon.edu', role: 'Principal / School Admin' },
+        teacher: { name: 'Dr. Marcus Vance', email: 'teacher.physics@horizon.edu', role: 'Physics Teacher' },
+        student: { name: 'Alex Chen', email: 'alex.chen@horizon.edu', role: 'Grade 12 Student' },
+        parent: { name: 'Eleanor Chen', email: 'parent@horizon.edu', role: 'Parent (Alex & Emily)' },
+      },
+    };
+  }
+
   async createSchoolLead(dto: {
     requesterEmail: string;
     schoolName: string;
@@ -99,6 +237,14 @@ export class HubService {
     sectionName?: string;
     subjectName: string;
     inviteCode?: string;
+    secondaryCampusName?: string;
+    secondaryCampusCity?: string;
+    brandingColor?: string;
+    subdomain?: string;
+    aiGuidanceMode?: string;
+    retentionPolicy?: string;
+    ssoGoogle?: boolean;
+    ssoMicrosoft?: boolean;
   }) {
     const emailNormalized = dto.adminEmail.trim().toLowerCase();
     const existing = await this.db.query(
@@ -143,6 +289,17 @@ export class HubService {
         [school.id, dto.campusName.trim(), dto.campusCity.trim()],
       );
       const campus = campusRes.rows[0];
+
+      let secondaryCampus: any = null;
+      if (dto.secondaryCampusName?.trim()) {
+        const secRes = await client.query(
+          `INSERT INTO campuses (school_id, name, address)
+           VALUES ($1, $2, $3)
+           RETURNING id, name, address`,
+          [school.id, dto.secondaryCampusName.trim(), dto.secondaryCampusCity?.trim() || dto.campusCity.trim()],
+        );
+        secondaryCampus = secRes.rows[0];
+      }
 
       // Step 3: Create School Admin user
       const userRes = await client.query(
@@ -236,6 +393,8 @@ export class HubService {
         provisioned: {
           school,
           campus,
+          secondaryCampus,
+          campuses: secondaryCampus ? [campus, secondaryCampus] : [campus],
           academicClass,
           section,
           subject,

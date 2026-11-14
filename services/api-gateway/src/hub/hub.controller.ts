@@ -93,6 +93,38 @@ class OnboardingWizardDto {
   @IsOptional()
   @IsString()
   inviteCode?: string;
+
+  @IsOptional()
+  @IsString()
+  secondaryCampusName?: string;
+
+  @IsOptional()
+  @IsString()
+  secondaryCampusCity?: string;
+
+  @IsOptional()
+  @IsString()
+  brandingColor?: string;
+
+  @IsOptional()
+  @IsString()
+  subdomain?: string;
+
+  @IsOptional()
+  @IsString()
+  aiGuidanceMode?: string;
+
+  @IsOptional()
+  @IsString()
+  retentionPolicy?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  ssoGoogle?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  ssoMicrosoft?: boolean;
 }
 
 class UpdateTeacherSandboxDto {
@@ -363,6 +395,11 @@ export class HubController {
   @Get('public/schools')
   getPublicSchools() {
     return this.hubService.getPublicSchools();
+  }
+
+  @Get('public/school-demo')
+  getSchoolDemo() {
+    return this.hubService.getSchoolDemo();
   }
 
   @Post('leads/school-inquiry')

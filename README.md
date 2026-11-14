@@ -13,6 +13,66 @@ Unlike conventional AI tools that generate answers or write essays on demand, Gu
 
 ---
 
+### Why GuruMera Was Founded
+With the rapid emergence of generative AI, classrooms faced an unprecedented dilemma: students began treating conversational LLMs as instant homework solvers. Rather than working through challenging concepts, learners received direct copy-paste solutions, essays, and code. This created an acute **cognitive bypass**—homework grades appeared immaculate, yet foundational retention collapsed and the joy of genuine discovery evaporated.
+
+GuruMera was founded to turn generative AI from a passive answer vending machine into a **patient, wise Socrates**—an educational AI tutor that refuses to spoil answers, defends academic integrity, and guides learners step-by-step through guided inquiry.
+
+---
+
+### The Educational Problem We Are Solving
+1. **Cognitive Bypass & Cheating**: Standard conversational AI bypasses the "productive struggle" required for deep cognitive wiring.
+2. **The 2-Sigma Tutoring Inequality**: 1-on-1 human tutoring yields transformative two-standard-deviation improvements (Bloom's 2 Sigma), but remains prohibitively expensive for most families.
+3. **The Teacher "Black Box"**: Educators are blind to where students stumble during independent study at home until test day.
+4. **Disconnected Systems**: Fragmentation between open exploration for self-learners, formal institutional school administration, and parent oversight.
+
+---
+
+### Our Learning Philosophy
+GuruMera is anchored in three foundational cognitive principles:
+1. **Understand before memorizing**: Facts and formulas evaporate without conceptual grounding. True mastery requires understanding the *why* and first principles before committing methods to memory. When a learner truly understands, they can reconstruct answers from scratch.
+2. **Think before answering**: Speed is not the measure of intellectual capability. We foster deliberate pause, hypothesis testing, and dialectical reasoning—encouraging learners to examine their assumptions before reaching a conclusion.
+3. **Master through practice**: Durable knowledge is forged through active, deliberate application. Spaced repetition, adaptive toy problems, and iterative debugging transform passive familiarity into permanent, intuitive capability.
+
+---
+
+### Pedagogical Principles
+* **Classical Socratic Dialectic**: Guiding inquiries via progressive hints, counter-questions, and analogies rather than declarative lectures.
+* **Zone of Proximal Development (ZPD)**: Scaffolding hints dynamically based on student comprehension level (Elementary, High School, AP/Undergraduate).
+* **Productive Struggle & Metacognition**: Protecting the cognitive friction where genuine learning happens and training students to monitor their own problem-solving processes.
+* **Dual Coding & Multi-Modal Interaction**: Pairing Socratic dialogue with interactive STEM function graphing, prerequisite knowledge trees, and 2-tier spaced repetition flashcards.
+
+---
+
+### Approach to Responsible AI
+* **Defense-in-Depth Guardrails**: Multi-layer server-side input and output filtering that detects prompt injections and strictly deflects direct solution demands.
+* **Zero Direct Solutions Policy**: Refusal to supply answers, code solutions, or pre-written essays.
+* **FERPA & COPPA Privacy by Design**: Student data is never used to train public foundation models, never monetized, and strictly isolated via PostgreSQL Row-Level Security.
+* **Server-Side Answer-Key Shielding**: Rubrics and answer keys are cloaked server-side and never exposed to client-side prompt manipulation.
+* **Human-in-the-Loop Transparency**: Comprehensive audit transcripts and injection alert metrics provided directly to teachers and administrators.
+
+---
+
+### Team & Leadership
+* **Pedagogical Leadership**: Experienced educators specializing in curriculum scaffolding, assessment rubrics, and Vygotskian learning frameworks.
+* **AI Safety & Engineering**: Systems architects and machine learning engineers focused on low-latency inference, defensive prompting, and multi-tier guardrails.
+* **Product & Institutional Partnerships**: Domain specialists partnering with school districts, teachers, and parents to ensure equity, privacy, and seamless classroom workflows.
+
+---
+
+### Long-Term Vision
+To democratize high-order 1-on-1 Socratic tutoring worldwide—ensuring every student, regardless of background or geographic location, has access to an infinitely patient study mentor that inspires curiosity, fosters critical thinking, and prepares them for an AI-augmented future.
+
+---
+
+### Upcoming Educational Capabilities Roadmap
+* **Phase 1: Universal Foundation (v3.0 - Current)**: 7-tool Public Learning Hub, 2-tier flashcards (SM-2), prerequisite knowledge maps, teacher sandbox simulator, multi-tenant school onboarding, and parent oversight portal.
+* **Phase 2: Voice & Multimodal Diagnostics (Q1-Q2 2027)**: Real-time conversational voice tutoring with natural cadence; multimodal vision for handwritten math error analysis; adaptive neurodivergent pacing.
+* **Phase 3: Peer Socratic Circles & Global Standards (Q3-Q4 2027)**: AI-moderated peer debate rooms; native alignment with IB, Cambridge IGCSE, AP, and CBSE curricula; offline-first edge models for bandwidth-constrained schools.
+* **Phase 4: Socratic Simulation Labs & Mastery Credentials (2028+)**: Interactive STEM sandboxes with dynamic AI inquiry; verifiable mastery credentials based on demonstrated reasoning and problem-solving rigor.
+
+---
+
 ### Purpose & Vision
 In the era of generative AI, classrooms face a growing dilemma: students frequently treat chatbots as instant "homework solvers," bypassing foundational thinking. At the same time, motivated independent learners lack structured, interactive guidance outside enrolled classrooms.
 
