@@ -12,6 +12,12 @@ import { KaTeXMath } from '@/components/KaTeXMath';
 import { MathGraphPlayground } from '@/components/MathGraphPlayground';
 import { BrandLogo } from '@/components/BrandLogo';
 import {
+  HubWorkspaceHeader,
+  CURATED_STUDY_UNITS,
+  StudyUnit,
+} from '@/components/HubWorkspaceHeader';
+import { HubToolBanner } from '@/components/HubToolBanner';
+import {
   ArrowRight,
   Award,
   BookOpen,
@@ -31,6 +37,7 @@ import {
   PenTool,
   PlusCircle,
   Send,
+  ShieldCheck,
   Sparkles,
   Unlock,
   X,
@@ -58,6 +65,13 @@ export default function PublicLearningHubPage() {
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<HubTab>('sandbox');
   const [toast, setToast] = useState('');
+
+  // Unified Learning Workspace State
+  const [currentUnit, setCurrentUnit] = useState<StudyUnit>(CURATED_STUDY_UNITS[0]);
+  const [tutorQueriesCount, setTutorQueriesCount] = useState<number>(0);
+  const [cardsReviewedCount, setCardsReviewedCount] = useState<number>(0);
+  const [checkpointsClearedCount, setCheckpointsClearedCount] = useState<number>(0);
+  const [quizzesTakenCount, setQuizzesTakenCount] = useState<number>(0);
 
   // Gamification & Invite Migration
   const [gamification, setGamification] = useState<any>(null);
@@ -283,6 +297,7 @@ export default function PublicLearningHubPage() {
       );
       if (ok) {
         const finalMsgs: ChatMsg[] = [...nextUserMsgs, { role: 'assistant', content: replyAcc }];
+        setTutorQueriesCount((prev) => prev + 1);
         if (!user) {
           const nc = anonQueryCount + 1;
           setAnonQueryCount(nc);
@@ -398,6 +413,7 @@ export default function PublicLearningHubPage() {
   const handleRateCard = async (quality: number) => {
     if (!selectedDeck) return;
     const currentCard = selectedDeck.cards[cardIndex];
+    setCardsReviewedCount((prev) => prev + 1);
     if (!user) {
       // Allow interactive preview, prompt on save
       const nextIdx = (cardIndex + 1) % selectedDeck.cards.length;
@@ -417,6 +433,23 @@ export default function PublicLearningHubPage() {
     }
   };
 
+  // ── Unified Workspace Unit Selector ──
+  const handleSelectUnit = (unit: StudyUnit) => {
+    setCurrentUnit(unit);
+    setTopic(unit.title);
+    setMode(unit.defaultMode);
+    setConceptDomain(unit.conceptDomain);
+    switchConceptDomain(unit.conceptDomain);
+    setAiDeckTopic(unit.title);
+    setAiDeckSubject(unit.subject);
+    setQuizGenForm((prev) => ({
+      ...prev,
+      subject: unit.subject,
+      topic: unit.title,
+    }));
+    showToast(`Loaded Unified Study Workspace for "${unit.title}". All tools connected!`);
+  };
+
   // ── 4. Concept DAG Handlers ──
   const switchConceptDomain = async (domain: string) => {
     setConceptDomain(domain);
@@ -433,6 +466,9 @@ export default function PublicLearningHubPage() {
     try {
       const res = await api.hub.evaluateConcept(activeNode.id, checkpointAns);
       setEvalResult(res);
+      if (res?.passed) {
+        setCheckpointsClearedCount((prev) => prev + 1);
+      }
       if (res.gamification) setGamification(res.gamification);
       const refreshed = await api.hub.getConceptNodes(conceptDomain).catch(() => ({ nodes: [] }));
       setConcepts(refreshed.nodes || []);
@@ -474,6 +510,7 @@ export default function PublicLearningHubPage() {
     try {
       const res = await api.hub.submitQuizAttempt(activeQuiz.quiz.id, quizAnswers);
       setQuizResult(res);
+      setQuizzesTakenCount((prev) => prev + 1);
       if (res.gamification) setGamification(res.gamification);
     } catch (err: any) {
       showToast('Error: ' + err.message);
@@ -647,6 +684,22 @@ export default function PublicLearningHubPage() {
           </div>
         )}
 
+        {/* Unified Learning Workspace Header */}
+        <HubWorkspaceHeader
+          currentUnit={currentUnit}
+          onSelectUnit={handleSelectUnit}
+          activeTab={activeTab}
+          onSelectTab={(t) => setActiveTab(t)}
+          user={user}
+          anonQueryCount={anonQueryCount}
+          gamification={gamification}
+          onOpenSignup={() => setSignupModalOpen(true)}
+          tutorQueriesCount={tutorQueriesCount}
+          cardsReviewedCount={cardsReviewedCount}
+          checkpointsClearedCount={checkpointsClearedCount}
+          quizzesTakenCount={quizzesTakenCount}
+        />
+
         {/* Tool Tabs */}
         <div className="flex gap-1.5 overflow-x-auto bg-white border border-slate-200 rounded-2xl p-1.5 mb-6 shadow-sm">
           {[
@@ -677,83 +730,152 @@ export default function PublicLearningHubPage() {
 
         {/* ── TAB 1: Socratic Sandbox ── */}
         {activeTab === 'sandbox' && (
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 h-fit">
-              <h2 className="font-bold text-slate-900 flex items-center gap-2">
-                <Brain className="w-4 h-4 text-indigo-600" /> Configure Study Session
-              </h2>
-              <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Topic or Concept</label>
-                <input
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Scaffolding Level</label>
-                <select
-                  value={level}
-                  onChange={(e) => setLevel(e.target.value as any)}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
-                >
-                  <option value="ELEMENTARY">Elementary (Intuitive Analogies)</option>
-                  <option value="HIGH_SCHOOL">High School (Foundational)</option>
-                  <option value="AP_UNDERGRAD">AP / Undergrad (Rigorous Proofs)</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Pedagogical Mode</label>
-                <div className="space-y-1.5">
-                  {[
-                    { v: 'EXPLANATION', label: 'Guided Explanation (Concept discovery)' },
-                    { v: 'CHECK_MY_LOGIC', label: 'Check My Logic (Find reasoning flaws)' },
-                    { v: 'TOY_PROBLEM', label: 'Toy Problem (Interactive mini-challenge)' },
-                  ].map((m) => (
-                    <button
-                      key={m.v}
-                      type="button"
-                      onClick={() => setMode(m.v as any)}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-xs border transition-colors ${
-                        mode === m.v
-                          ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-medium'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="pt-2 border-t border-slate-100">
-                <p className="text-xs font-medium text-slate-500 mb-2">Starter Prompts:</p>
-                <div className="space-y-1.5">
-                  {[
-                    'Can you help me check why static friction does not always equal μN?',
-                    'Give me a tiny numerical thought experiment to test my intuition.',
-                  ].map((sample) => (
-                    <button
-                      key={sample}
-                      type="button"
-                      onClick={() => sendSandboxPrompt(sample)}
-                      className="w-full text-left text-xs bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg p-2 text-slate-700"
-                    >
-                      {sample}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+          <div className="space-y-6">
+            <HubToolBanner
+              toolKey="sandbox"
+              activeTopic={currentUnit.title}
+              onNavigateTab={setActiveTab}
+            />
 
-            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl flex flex-col h-[560px] overflow-hidden shadow-sm">
-              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 h-fit">
+                <h2 className="font-bold text-slate-900 flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-indigo-600" /> Configure Study Session
+                </h2>
                 <div>
-                  <div className="font-semibold text-sm text-slate-900">{topic}</div>
-                  <div className="text-xs text-slate-500">
-                    {level.replace('_', ' ')} · {mode.replace('_', ' ')} · 5-Layer Guardrailed
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Topic or Concept</label>
+                  <input
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Scaffolding Level</label>
+                  <select
+                    value={level}
+                    onChange={(e) => setLevel(e.target.value as any)}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="ELEMENTARY">Elementary (Intuitive Analogies)</option>
+                    <option value="HIGH_SCHOOL">High School (Foundational)</option>
+                    <option value="AP_UNDERGRAD">AP / Undergrad (Rigorous Proofs)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
+                    <Brain className="w-3.5 h-3.5 text-[#F5921D]" /> Pedagogical Mode (Visually Indicated)
+                  </label>
+                  <div className="space-y-1.5">
+                    {[
+                      {
+                        v: 'EXPLANATION',
+                        label: 'Guided Explanation',
+                        sub: 'Step-by-step discovery via questions',
+                        badge: 'Discovery',
+                        activeStyle: 'border-blue-500 bg-blue-50/80 text-blue-950 ring-1 ring-blue-500',
+                      },
+                      {
+                        v: 'CHECK_MY_LOGIC',
+                        label: 'Check My Logic',
+                        sub: 'Spot flaws in your deductions',
+                        badge: 'Validator',
+                        activeStyle: 'border-amber-500 bg-amber-50/80 text-amber-950 ring-1 ring-amber-500',
+                      },
+                      {
+                        v: 'TOY_PROBLEM',
+                        label: 'Toy Problem',
+                        sub: 'Simplified numerical challenges',
+                        badge: 'Intuition',
+                        activeStyle: 'border-emerald-500 bg-emerald-50/80 text-emerald-950 ring-1 ring-emerald-500',
+                      },
+                    ].map((m) => (
+                      <button
+                        key={m.v}
+                        type="button"
+                        onClick={() => setMode(m.v as any)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs border transition-all ${
+                          mode === m.v
+                            ? `${m.activeStyle} font-semibold shadow-xs`
+                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900">{m.label}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider bg-white border border-slate-200">
+                            {m.badge}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{m.sub}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-slate-100">
+                  <p className="text-xs font-medium text-slate-500 mb-2">Starter Prompts:</p>
+                  <div className="space-y-1.5">
+                    {[
+                      'Can you help me check why static friction does not always equal μN?',
+                      'Give me a tiny numerical thought experiment to test my intuition.',
+                    ].map((sample) => (
+                      <button
+                        key={sample}
+                        type="button"
+                        onClick={() => sendSandboxPrompt(sample)}
+                        className="w-full text-left text-xs bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg p-2 text-slate-700"
+                      >
+                        {sample}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
+
+              <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl flex flex-col h-[560px] overflow-hidden shadow-sm">
+                <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                  <div>
+                    <div className="font-semibold text-sm text-slate-900">{topic}</div>
+                    <div className="text-xs text-slate-500">
+                      {level.replace('_', ' ')} · {mode.replace('_', ' ')} · 5-Layer Guardrailed
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visually Obvious Selected Pedagogical Mode Banner */}
+                <div
+                  className={`px-4 py-2.5 border-b flex flex-wrap items-center justify-between gap-2 text-xs transition-colors ${
+                    mode === 'EXPLANATION'
+                      ? 'bg-blue-50/90 border-blue-200 text-blue-950'
+                      : mode === 'CHECK_MY_LOGIC'
+                      ? 'bg-amber-50/90 border-amber-200 text-amber-950'
+                      : 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`px-2 py-0.5 rounded-md font-bold uppercase tracking-wider text-[10px] shadow-xs ${
+                        mode === 'EXPLANATION'
+                          ? 'bg-blue-600 text-white'
+                          : mode === 'CHECK_MY_LOGIC'
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-emerald-600 text-white'
+                      }`}
+                    >
+                      Active Mode: {mode.replace('_', ' ')}
+                    </span>
+                    <span className="font-medium text-slate-700 text-xs">
+                      {mode === 'EXPLANATION' &&
+                        'Guided Discovery: AI asks probing questions so you deduce the core principles.'}
+                      {mode === 'CHECK_MY_LOGIC' &&
+                        'Reasoning Validator: AI audits your statements for gaps, invalid assumptions, or fallacies.'}
+                      {mode === 'TOY_PROBLEM' &&
+                        'Intuition Sandbox: AI constructs simplified numerical mini-cases to test your mental model.'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 bg-white/80 px-2 py-0.5 rounded-full border border-slate-200 shrink-0">
+                    5-Layer Guardrailed · Zero Answer Leaks
+                  </span>
+                </div>
 
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 {sandboxMsgs.length === 0 && (
@@ -883,71 +1005,80 @@ export default function PublicLearningHubPage() {
               </form>
             </div>
           </div>
+          </div>
         )}
 
         {/* ── TAB 2: Socratic Code Debugger ── */}
         {activeTab === 'code' && (
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-slate-900 flex items-center gap-2">
-                  <Code2 className="w-4 h-4 text-indigo-600" /> Paste Buggy Code Snippet
-                </h2>
-                <select
-                  value={codeLang}
-                  onChange={(e) => setCodeLang(e.target.value)}
-                  className="border border-slate-200 rounded-lg px-2.5 py-1 text-xs bg-white font-medium"
-                >
-                  <option value="python">Python</option>
-                  <option value="javascript">JavaScript / TypeScript</option>
-                  <option value="cpp">C++</option>
-                  <option value="java">Java</option>
-                </select>
-              </div>
-              <textarea
-                rows={11}
-                value={codeSnippet}
-                onChange={(e) => setCodeSnippet(e.target.value)}
-                className="w-full font-mono text-xs bg-slate-900 text-emerald-300 rounded-xl p-4 outline-none"
-              />
-              <input
-                value={codeQuestion}
-                onChange={(e) => setCodeQuestion(e.target.value)}
-                placeholder="What bug or unexpected output are you observing?"
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-              <button
-                type="button"
-                onClick={sendCodeDebug}
-                disabled={codeStreaming}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm disabled:opacity-50"
-              >
-                {codeStreaming ? 'Tracing logic...' : 'Debug Socratic-Style (No Spoiler Fixes)'}
-              </button>
-            </div>
+          <div className="space-y-6">
+            <HubToolBanner
+              toolKey="code"
+              activeTopic={currentUnit.title}
+              onNavigateTab={setActiveTab}
+            />
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 h-[480px] overflow-y-auto space-y-3">
-              <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-2">
-                Socratic Trace &amp; Diagnostic Questions
-              </h3>
-              {codeMsgs.length === 0 && (
-                <p className="text-sm text-slate-400 py-10 text-center">
-                  Submit a code snippet and question on the left to start guided edge-case tracing.
-                </p>
-              )}
-              {codeMsgs.map((m, i) => (
-                <div
-                  key={i}
-                  className={`rounded-xl p-3 text-sm ${
-                    m.role === 'user' ? 'bg-indigo-50 text-indigo-950' : 'bg-slate-100 text-slate-800'
-                  }`}
-                >
-                  <div className="text-[11px] font-bold uppercase mb-1 text-slate-500">
-                    {m.role === 'user' ? 'Your Bug Report' : 'GuruMera Code Coach'}
-                  </div>
-                  <KaTeXMath text={m.content || '...'} />
+            <div className="grid lg:grid-cols-2 gap-6">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-slate-900 flex items-center gap-2">
+                    <Code2 className="w-4 h-4 text-indigo-600" /> Paste Buggy Code Snippet
+                  </h2>
+                  <select
+                    value={codeLang}
+                    onChange={(e) => setCodeLang(e.target.value)}
+                    className="border border-slate-200 rounded-lg px-2.5 py-1 text-xs bg-white font-medium"
+                  >
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript / TypeScript</option>
+                    <option value="cpp">C++</option>
+                    <option value="java">Java</option>
+                  </select>
                 </div>
-              ))}
+                <textarea
+                  rows={11}
+                  value={codeSnippet}
+                  onChange={(e) => setCodeSnippet(e.target.value)}
+                  className="w-full font-mono text-xs bg-slate-900 text-emerald-300 rounded-xl p-4 outline-none"
+                />
+                <input
+                  value={codeQuestion}
+                  onChange={(e) => setCodeQuestion(e.target.value)}
+                  placeholder="What bug or unexpected output are you observing?"
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+                <button
+                  type="button"
+                  onClick={sendCodeDebug}
+                  disabled={codeStreaming}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm disabled:opacity-50"
+                >
+                  {codeStreaming ? 'Tracing logic...' : 'Debug Socratic-Style (No Spoiler Fixes)'}
+                </button>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 h-[480px] overflow-y-auto space-y-3">
+                <h3 className="font-semibold text-sm text-slate-800 border-b border-slate-100 pb-2">
+                  Socratic Trace &amp; Diagnostic Questions
+                </h3>
+                {codeMsgs.length === 0 && (
+                  <p className="text-sm text-slate-400 py-10 text-center">
+                    Submit a code snippet and question on the left to start guided edge-case tracing.
+                  </p>
+                )}
+                {codeMsgs.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-xl p-3 text-sm ${
+                      m.role === 'user' ? 'bg-indigo-50 text-indigo-950' : 'bg-slate-100 text-slate-800'
+                    }`}
+                  >
+                    <div className="text-[11px] font-bold uppercase mb-1 text-slate-500">
+                      {m.role === 'user' ? 'Your Bug Report' : 'GuruMera Code Coach'}
+                    </div>
+                    <KaTeXMath text={m.content || '...'} />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -955,6 +1086,12 @@ export default function PublicLearningHubPage() {
         {/* ── TAB 3: Socratic Flashcards & SM-2 ── */}
         {activeTab === 'flashcards' && (
           <div className="space-y-6">
+            <HubToolBanner
+              toolKey="flashcards"
+              activeTopic={currentUnit.title}
+              onNavigateTab={setActiveTab}
+            />
+
             {/* Topic-Driven AI Generator */}
             <form
               onSubmit={handleGenerateTopicDeck}
@@ -1131,6 +1268,12 @@ export default function PublicLearningHubPage() {
         {/* ── TAB 4: Concept Knowledge Maps (DAG) ── */}
         {activeTab === 'concepts' && (
           <div className="space-y-6">
+            <HubToolBanner
+              toolKey="concepts"
+              activeTopic={currentUnit.title}
+              onNavigateTab={setActiveTab}
+            />
+
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h2 className="font-bold text-slate-900">Concept Knowledge Tree (Mastery DAG)</h2>
@@ -1255,6 +1398,12 @@ export default function PublicLearningHubPage() {
         {/* ── TAB 5: Practice Quizzes & Misconception Debrief ── */}
         {activeTab === 'quizzes' && (
           <div className="space-y-6">
+            <HubToolBanner
+              toolKey="quizzes"
+              activeTopic={currentUnit.title}
+              onNavigateTab={setActiveTab}
+            />
+
             <form
               onSubmit={handleGenerateQuiz}
               className="bg-white border border-slate-200 rounded-2xl p-5 grid md:grid-cols-5 gap-3 items-end"
@@ -1409,18 +1558,32 @@ export default function PublicLearningHubPage() {
 
         {/* ── TAB 6: STEM Grapher ── */}
         {activeTab === 'grapher' && (
-          <MathGraphPlayground
-            onAskSocratic={(prompt) => {
-              setTopic('Function & Curve Analysis');
-              setActiveTab('sandbox');
-              sendSandboxPrompt(prompt);
-            }}
-          />
+          <div className="space-y-6">
+            <HubToolBanner
+              toolKey="grapher"
+              activeTopic={currentUnit.title}
+              onNavigateTab={setActiveTab}
+            />
+            <MathGraphPlayground
+              onAskSocratic={(prompt) => {
+                setTopic('Function & Curve Analysis');
+                setActiveTab('sandbox');
+                sendSandboxPrompt(prompt);
+              }}
+            />
+          </div>
         )}
 
         {/* ── TAB 7: Peer Learning Discussions ── */}
         {activeTab === 'discussions' && (
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="space-y-6">
+            <HubToolBanner
+              toolKey="discussions"
+              activeTopic={currentUnit.title}
+              onNavigateTab={setActiveTab}
+            />
+
+            <div className="grid lg:grid-cols-3 gap-6">
             <div className="space-y-4">
               <form onSubmit={handleCreateThread} className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2.5">
                 <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
@@ -1542,11 +1705,18 @@ export default function PublicLearningHubPage() {
               )}
             </div>
           </div>
+          </div>
         )}
 
         {/* ── TAB 8: Collaborative Whiteboard Rooms ── */}
         {activeTab === 'whiteboards' && (
           <div className="space-y-6">
+            <HubToolBanner
+              toolKey="whiteboards"
+              activeTopic={currentUnit.title}
+              onNavigateTab={setActiveTab}
+            />
+
             <form
               onSubmit={handleCreateWhiteboard}
               className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-wrap gap-3 items-center"
@@ -1588,32 +1758,40 @@ export default function PublicLearningHubPage() {
 
         {/* ── TAB 9: Public Coursework Resource Bank ── */}
         {activeTab === 'coursework' && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {publicCoursework.length === 0 ? (
-              <div className="col-span-full bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-400 text-sm">
-                No public directory assignments published yet.
-              </div>
-            ) : (
-              publicCoursework.map((cw) => (
-                <Link
-                  key={cw.id}
-                  href={`/coursework/${cw.id}`}
-                  className="bg-white border border-slate-200 hover:border-indigo-400 rounded-2xl p-5 shadow-sm transition-all"
-                >
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">
-                      {cw.subject_name}
-                    </span>
-                    <span className="text-slate-400">{cw.school_name}</span>
-                  </div>
-                  <h3 className="font-bold text-slate-900">{cw.title}</h3>
-                  <p className="text-xs text-slate-600 mt-1 line-clamp-3">{cw.description}</p>
-                  <div className="text-xs font-semibold text-indigo-600 mt-3">
-                    Open Socratic AI Study Workspace →
-                  </div>
-                </Link>
-              ))
-            )}
+          <div className="space-y-6">
+            <HubToolBanner
+              toolKey="coursework"
+              activeTopic={currentUnit.title}
+              onNavigateTab={setActiveTab}
+            />
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {publicCoursework.length === 0 ? (
+                <div className="col-span-full bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-400 text-sm">
+                  No public directory assignments published yet.
+                </div>
+              ) : (
+                publicCoursework.map((cw) => (
+                  <Link
+                    key={cw.id}
+                    href={`/coursework/${cw.id}`}
+                    className="bg-white border border-slate-200 hover:border-indigo-400 rounded-2xl p-5 shadow-sm transition-all"
+                  >
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <span className="bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">
+                        {cw.subject_name}
+                      </span>
+                      <span className="text-slate-400">{cw.school_name}</span>
+                    </div>
+                    <h3 className="font-bold text-slate-900">{cw.title}</h3>
+                    <p className="text-xs text-slate-600 mt-1 line-clamp-3">{cw.description}</p>
+                    <div className="text-xs font-semibold text-indigo-600 mt-3">
+                      Open Socratic AI Study Workspace →
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1625,18 +1803,34 @@ export default function PublicLearningHubPage() {
             <div className="flex items-start justify-between">
               <div>
                 <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#F5921D] bg-[#F5921D]/10 px-2.5 py-0.5 rounded-full mb-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> 3 Free Queries Completed
+                  <Sparkles className="w-3.5 h-3.5" /> 3 Free Trial Queries Completed
                 </div>
                 <h3 className="font-extrabold text-lg text-[#1E225B]">
                   You&apos;re on a roll! 🔥
                 </h3>
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Sign up with Google to save your flashcards and unlock unlimited AI tutoring.
+                  Sign up with Google to save your learning streak, sync flashcards, and unlock unlimited AI tutoring.
                 </p>
               </div>
               <button onClick={() => setSignupModalOpen(false)} className="text-slate-400 hover:text-slate-700 p-1">
                 <X className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* Transparent Trial Breakdown Notice */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1.5 text-slate-600">
+              <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                <ShieldCheck className="w-4 h-4 text-[#249EA0]" /> Free Tier Allowance Rules
+              </div>
+              <p className="text-[11px] leading-relaxed">
+                • <strong>What counts:</strong> Interactive prompts to the Socratic AI Tutor &amp; Code Debugger (3 queries allowed per 24 hours).
+              </p>
+              <p className="text-[11px] leading-relaxed">
+                • <strong>What is unlimited:</strong> Knowledge Maps, Public Flashcards, Practice Quizzes, STEM Grapher, and Discussions are 100% free with no limit.
+              </p>
+              <p className="text-[11px] leading-relaxed">
+                • <strong>Reset time:</strong> Allowance resets every 24 hours, or create a free account right now to continue immediately.
+              </p>
             </div>
 
             {/* Google SSO One-Click Action */}
