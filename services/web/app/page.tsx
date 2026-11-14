@@ -62,6 +62,12 @@ export default function HomePage() {
             >
               For Schools
             </Link>
+            <Link
+              href="/parents"
+              className="text-slate-600 hover:text-[#1E225B] transition-colors"
+            >
+              For Parents
+            </Link>
             <button
               type="button"
               onClick={() => setActiveModal('pricing')}

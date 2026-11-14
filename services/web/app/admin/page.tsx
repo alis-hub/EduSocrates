@@ -52,6 +52,9 @@ export default function AdminDashboard() {
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [allocations, setAllocations] = useState<any[]>([]);
   const [parentAssociations, setParentAssociations] = useState<any[]>([]);
+  const [parentInvitations, setParentInvitations] = useState<any[]>([]);
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [lastGeneratedInvite, setLastGeneratedInvite] = useState<any | null>(null);
   const [invites, setInvites] = useState<any[]>([]);
   const [inviteForm, setInviteForm] = useState({ inviteCode: '', sectionId: '', targetRole: 'STUDENT', maxUses: '100' });
 
@@ -69,7 +72,7 @@ export default function AdminDashboard() {
 
   const loadAll = async () => {
     setLoading(true);
-    const [s, c, cl, sec, sub, u, ay, en, al, pa, inv] = await Promise.all([
+    const [s, c, cl, sec, sub, u, ay, en, al, pa, inv, pinv] = await Promise.all([
       api.getAdminStats().catch(() => null),
       api.getCampuses().catch(() => []),
       api.getClasses().catch(() => []),
@@ -81,11 +84,13 @@ export default function AdminDashboard() {
       api.getAllocations().catch(() => []),
       api.getParentAssociations().catch(() => []),
       api.getAdminInvites().catch(() => ({ invites: [] })),
+      api.getParentInvitations().catch(() => []),
     ]);
     setStats(s); setCampuses(c); setClasses(cl); setSections(sec);
     setSubjects(sub); setUsers(u); setAcademicYears(ay);
     setEnrollments(en); setAllocations(al); setParentAssociations(pa);
     setInvites(inv?.invites || []);
+    setParentInvitations(pinv || []);
     setLoading(false);
   };
 
@@ -181,7 +186,7 @@ export default function AdminDashboard() {
     { key: 'enrollments', label: 'Enrollments', icon: GraduationCap },
     { key: 'allocations', label: 'Allocations', icon: Link2 },
     { key: 'users', label: 'Users', icon: Users },
-    { key: 'parent-associations', label: 'Parent Links', icon: UserPlus },
+    { key: 'parent-associations', label: 'Parents & Guardians', icon: UserPlus },
     { key: 'invites', label: 'Invite Codes', icon: KeyRound },
     { key: 'bulk-csv', label: 'Bulk Import', icon: ChevronRight },
   ];
@@ -516,78 +521,372 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* ── Parent-Student Associations ─────────────────────────────── */}
+            {/* ── Parents & Guardians Management ─────────────────────────── */}
             {activeTab === 'parent-associations' && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-800">Parent-Student Links</h2>
-                  <button onClick={() => setShowForm(f => !f)} className={btnPrimary}>
-                    <Plus className="w-4 h-4 inline mr-1" />Link Parent
-                  </button>
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">Parents &amp; Guardians</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Issue secure single-use school invitations and manage verified parent-student associations.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setShowInviteForm(true);
+                        setShowForm(false);
+                      }}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-3.5 rounded-lg text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Issue Parent Invitation</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowForm(true);
+                        setShowInviteForm(false);
+                      }}
+                      className="border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2 px-3.5 rounded-lg text-xs transition-colors"
+                    >
+                      <span>Link Existing Account</span>
+                    </button>
+                  </div>
                 </div>
-                {showForm && (
-                  <FormPanel title="Link a Parent to a Student" onClose={() => setShowForm(false)}>
+
+                {/* Generated Invitation Success Banner */}
+                {lastGeneratedInvite && (
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2 text-xs text-emerald-950">
+                    <div className="font-bold flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        Parent Invitation Link Ready!
+                      </span>
+                      <button
+                        onClick={() => setLastGeneratedInvite(null)}
+                        className="text-emerald-500 hover:text-emerald-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-emerald-800">
+                      Send this single-use link to <strong>{lastGeneratedInvite.invited_parent_name}</strong> (
+                      {lastGeneratedInvite.invited_email}). Valid for 72 hours.
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        readOnly
+                        value={
+                          typeof window !== 'undefined'
+                            ? `${window.location.origin}${lastGeneratedInvite.invitationUrl}`
+                            : lastGeneratedInvite.invitationUrl
+                        }
+                        className="flex-1 bg-white border border-emerald-300 rounded-lg px-3 py-1.5 font-mono text-xs text-slate-800 select-all"
+                      />
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}${lastGeneratedInvite.invitationUrl}`;
+                          navigator.clipboard.writeText(url);
+                          flash('Invitation URL copied to clipboard!');
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shrink-0"
+                      >
+                        Copy Link
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Issue Parent Invitation Form */}
+                {showInviteForm && (
+                  <FormPanel title="Issue School Parent Invitation" onClose={() => setShowInviteForm(false)}>
                     <StatusMsg msg={msg} />
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-                      const form = e.currentTarget as any;
-                      try {
-                        await api.createParentAssociation({
-                          parentId: form.parentId.value,
-                          studentId: form.studentId.value,
-                          relationshipType: form.relationship.value || 'GUARDIAN',
-                        });
-                        flash('Parent linked!'); setShowForm(false); await loadAll();
-                      } catch (err: any) { flash('Error: ' + err.message); }
-                    }} className="grid grid-cols-3 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">Parent</label>
-                        <select name="parentId" required className={inputCls}>
-                          <option value="">Select parent</option>
-                          {parents.map((p: any) => <option key={p.id} value={p.id}>{p.first_name} {p.last_name} — {p.email}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">Student</label>
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const form = e.currentTarget as any;
+                        try {
+                          const res = await api.createParentInvitation({
+                            studentId: form.studentId.value,
+                            invitedEmail: form.invitedEmail.value,
+                            invitedParentName: form.invitedParentName.value,
+                            relationshipType: form.relationship.value || 'GUARDIAN',
+                          });
+                          setLastGeneratedInvite(res);
+                          setShowInviteForm(false);
+                          flash('Parent invitation generated successfully!');
+                          await loadAll();
+                        } catch (err: any) {
+                          flash('Error: ' + err.message);
+                        }
+                      }}
+                      className="grid grid-cols-2 gap-3 text-xs"
+                    >
+                      <div className="col-span-2">
+                        <label className="font-medium text-gray-700 mb-1 block">Enrolled Student</label>
                         <select name="studentId" required className={inputCls}>
                           <option value="">Select student</option>
-                          {students.map((s: any) => <option key={s.id} value={s.id}>{s.first_name} {s.last_name} — {s.email}</option>)}
+                          {students.map((s: any) => (
+                            <option key={s.id} value={s.id}>
+                              {s.first_name} {s.last_name} ({s.email})
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">Relationship</label>
-                        <input name="relationship" defaultValue="GUARDIAN" className={inputCls} placeholder="GUARDIAN / PARENT / SIBLING" />
+                        <label className="font-medium text-gray-700 mb-1 block">Parent Full Name</label>
+                        <input
+                          name="invitedParentName"
+                          required
+                          placeholder="e.g. Eleanor Chen"
+                          className={inputCls}
+                        />
                       </div>
-                      <div className="col-span-3">
-                        <button type="submit" className={btnPrimary}>Save Link</button>
+                      <div>
+                        <label className="font-medium text-gray-700 mb-1 block">Parent Email Address</label>
+                        <input
+                          name="invitedEmail"
+                          type="email"
+                          required
+                          placeholder="e.g. parent@example.com"
+                          className={inputCls}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="font-medium text-gray-700 mb-1 block">Relationship</label>
+                        <select name="relationship" defaultValue="MOTHER" className={inputCls}>
+                          <option value="MOTHER">Mother</option>
+                          <option value="FATHER">Father</option>
+                          <option value="GUARDIAN">Guardian</option>
+                          <option value="OTHER">Other Authorized Representative</option>
+                        </select>
+                      </div>
+                      <div className="col-span-2 pt-1 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowInviteForm(false)}
+                          className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" className={btnPrimary}>
+                          Generate Secure Invitation Link
+                        </button>
                       </div>
                     </form>
                   </FormPanel>
                 )}
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+
+                {/* Direct Link Existing Form */}
+                {showForm && (
+                  <FormPanel title="Link Existing Parent Account to Student" onClose={() => setShowForm(false)}>
+                    <StatusMsg msg={msg} />
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const form = e.currentTarget as any;
+                        try {
+                          await api.createParentAssociation({
+                            parentId: form.parentId.value,
+                            studentId: form.studentId.value,
+                            relationshipType: form.relationship.value || 'GUARDIAN',
+                          });
+                          flash('Parent linked!');
+                          setShowForm(false);
+                          await loadAll();
+                        } catch (err: any) {
+                          flash('Error: ' + err.message);
+                        }
+                      }}
+                      className="grid grid-cols-3 gap-3 text-xs"
+                    >
+                      <div>
+                        <label className="font-medium text-gray-600 mb-1 block">Parent Account</label>
+                        <select name="parentId" required className={inputCls}>
+                          <option value="">Select parent</option>
+                          {parents.map((p: any) => (
+                            <option key={p.id} value={p.id}>
+                              {p.first_name} {p.last_name} — {p.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="font-medium text-gray-600 mb-1 block">Student</label>
+                        <select name="studentId" required className={inputCls}>
+                          <option value="">Select student</option>
+                          {students.map((s: any) => (
+                            <option key={s.id} value={s.id}>
+                              {s.first_name} {s.last_name} — {s.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="font-medium text-gray-600 mb-1 block">Relationship</label>
+                        <input
+                          name="relationship"
+                          defaultValue="GUARDIAN"
+                          className={inputCls}
+                          placeholder="MOTHER / FATHER / GUARDIAN"
+                        />
+                      </div>
+                      <div className="col-span-3 pt-1">
+                        <button type="submit" className={btnPrimary}>
+                          Save Link
+                        </button>
+                      </div>
+                    </form>
+                  </FormPanel>
+                )}
+
+                {/* Section 1: School-Issued Parent Invitations */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden space-y-2">
+                  <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="font-bold text-xs text-gray-700 uppercase tracking-wider">
+                      Pending &amp; Issued Parent Invitations
+                    </h3>
+                    <span className="text-[11px] text-gray-400">
+                      {parentInvitations.length} invitation(s) recorded
+                    </span>
+                  </div>
+
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-100">
-                      <tr>{['Parent', 'Student', 'Relationship', ''].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-medium text-gray-500">{h}</th>)}</tr>
+                      <tr>
+                        {['Invited Parent', 'Student', 'Relationship', 'Status', 'Expires', 'Actions'].map((h) => (
+                          <th key={h} className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-50 text-xs">
+                      {parentInvitations.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-6 text-gray-400">
+                            No parent invitations issued yet. Click &quot;Issue Parent Invitation&quot; to invite a family.
+                          </td>
+                        </tr>
+                      ) : (
+                        parentInvitations.map((inv: any) => (
+                          <tr key={inv.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium text-gray-900">
+                              {inv.invited_parent_name}
+                              <span className="text-[11px] text-gray-400 block font-mono">{inv.invited_email}</span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-700">
+                              {inv.student_first_name} {inv.student_last_name}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">{inv.relationship_type}</td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                                  inv.status === 'ACCEPTED'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : inv.status === 'REVOKED'
+                                    ? 'bg-rose-100 text-rose-800'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}
+                              >
+                                {inv.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-400 text-[11px]">
+                              {new Date(inv.expires_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-3 text-right space-x-2">
+                              {inv.status === 'PENDING' && (
+                                <>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        const res = await api.resendParentInvitation(inv.id);
+                                        setLastGeneratedInvite(res);
+                                        flash('Invitation refreshed!');
+                                        await loadAll();
+                                      } catch (err: any) {
+                                        flash('Error: ' + err.message);
+                                      }
+                                    }}
+                                    className="text-xs text-blue-600 hover:underline font-semibold"
+                                  >
+                                    Refresh/Link
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await api.revokeParentInvitation(inv.id);
+                                        flash('Invitation revoked.');
+                                        await loadAll();
+                                      } catch (err: any) {
+                                        flash('Error: ' + err.message);
+                                      }
+                                    }}
+                                    className="text-xs text-red-500 hover:underline font-semibold"
+                                  >
+                                    Revoke
+                                  </button>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Section 2: Active Parent-Student Links */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden space-y-2">
+                  <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="font-bold text-xs text-gray-700 uppercase tracking-wider">
+                      Active Verified Parent-Student Links
+                    </h3>
+                    <span className="text-[11px] text-gray-400">
+                      {parentAssociations.length} link(s) active
+                    </span>
+                  </div>
+
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        {['Parent', 'Student', 'Relationship', ''].map((h) => (
+                          <th key={h} className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 text-xs">
                       {parentAssociations.length === 0 ? (
-                        <tr><td colSpan={4} className="text-center py-8 text-gray-400 text-sm">No parent-student links created yet.</td></tr>
+                        <tr>
+                          <td colSpan={4} className="text-center py-6 text-gray-400">
+                            No active parent-student links yet.
+                          </td>
+                        </tr>
                       ) : (
                         parentAssociations.map((pa: any) => (
                           <tr key={pa.id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 font-medium text-gray-900">
                               {pa.parent_first_name} {pa.parent_last_name}
-                              <span className="text-xs text-gray-400 block">{pa.parent_email}</span>
+                              <span className="text-[11px] text-gray-400 block font-mono">{pa.parent_email}</span>
                             </td>
                             <td className="px-4 py-3 text-gray-700">
                               {pa.student_first_name} {pa.student_last_name}
-                              <span className="text-xs text-gray-400 block">{pa.student_email}</span>
+                              <span className="text-[11px] text-gray-400 block font-mono">{pa.student_email}</span>
                             </td>
                             <td className="px-4 py-3">
-                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">{pa.relationship_type}</span>
+                              <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                                {pa.relationship_type}
+                              </span>
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <button onClick={() => handleDeleteParentAssociation(pa.id)} className={btnDanger} title="Delete Link">
+                              <button
+                                onClick={() => handleDeleteParentAssociation(pa.id)}
+                                className={btnDanger}
+                                title="Delete Link"
+                              >
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </td>
@@ -595,7 +894,6 @@ export default function AdminDashboard() {
                         ))
                       )}
                     </tbody>
-
                   </table>
                 </div>
               </div>

@@ -190,12 +190,19 @@ export const api = {
       body: JSON.stringify({ users }),
     }),
 
-  // ── Admin — Parent Associations ───────────────────────────────────────── //
+  // ── Admin — Parent Associations & Invitations ─────────────────────────── //
   getParentAssociations: () => apiFetch<any[]>('/admin/parent-associations'),
   createParentAssociation: (data: { parentId: string; studentId: string; relationshipType?: string }) =>
     apiFetch('/admin/parent-associations', { method: 'POST', body: JSON.stringify(data) }),
   deleteParentAssociation: (id: string) =>
     apiFetch(`/admin/parent-associations/${id}`, { method: 'DELETE' }),
+  getParentInvitations: () => apiFetch<any[]>('/admin/parent-invitations'),
+  createParentInvitation: (data: { studentId: string; invitedEmail: string; invitedParentName: string; relationshipType?: string }) =>
+    apiFetch('/admin/parent-invitations', { method: 'POST', body: JSON.stringify(data) }),
+  resendParentInvitation: (id: string) =>
+    apiFetch(`/admin/parent-invitations/${id}/resend`, { method: 'POST' }),
+  revokeParentInvitation: (id: string) =>
+    apiFetch(`/admin/parent-invitations/${id}/revoke`, { method: 'POST' }),
 
   // ── Teacher ───────────────────────────────────────────────────────────── //
   getTeacherCoursework: () => apiFetch<any[]>('/teacher/coursework'),
@@ -239,11 +246,39 @@ export const api = {
     }),
 
   // ── Parent ────────────────────────────────────────────────────────────── //
-  /** Returns the list of children linked to the authenticated parent. */
+  /** Returns the list of children linked to the authenticated parent with summary KPIs. */
   getMyChildren: () => apiFetch<any[]>('/parent/children'),
   /** Returns read-only coursework+grades for a specific child (parent must be linked). */
   getChildCoursework: (studentId: string) =>
     apiFetch<any[]>(`/parent/children/${studentId}/coursework`),
+  /** Returns rich academic overview, KPIs, and alerts for a specific child. */
+  getChildOverview: (studentId: string) =>
+    apiFetch<any>(`/parent/children/${studentId}/overview`),
+  /** Returns subject-wise performance, trends, and strengths/weaknesses for a child. */
+  getChildPerformance: (studentId: string) =>
+    apiFetch<any>(`/parent/children/${studentId}/performance`),
+  /** Returns concept mastery DAG, practice counts, and study recommendations. */
+  getChildMastery: (studentId: string) =>
+    apiFetch<any>(`/parent/children/${studentId}/mastery`),
+  /** Returns learning minutes, weekly consistency, and shielded AI Tutor summary. */
+  getChildActivity: (studentId: string) =>
+    apiFetch<any>(`/parent/children/${studentId}/activity`),
+  /** Returns attendance metrics and school announcements. */
+  getChildAttendance: (studentId: string) =>
+    apiFetch<any>(`/parent/children/${studentId}/attendance`),
+  /** Returns teacher feedback notes for a child. */
+  getChildFeedback: (studentId: string) =>
+    apiFetch<any[]>(`/parent/children/${studentId}/feedback`),
+  /** Returns parent notifications. */
+  getParentNotifications: () => apiFetch<any[]>('/parent/notifications'),
+  /** Returns parent profile and linked students. */
+  getParentProfile: () => apiFetch<any>('/parent/profile'),
+
+  // ── Public Parent Invitations ─────────────────────────────────────────── //
+  validateParentInvitation: (token: string) =>
+    apiFetch<any>(`/parent-invitations/validate/${token}`),
+  acceptParentInvitation: (data: { token: string; password?: string; firstName?: string; lastName?: string }) =>
+    apiFetch<any>('/parent-invitations/accept', { method: 'POST', body: JSON.stringify(data) }),
 
   // ── Super Admin ───────────────────────────────────────────────────────── //
   superAdmin: {

@@ -49,7 +49,8 @@ export function MarketingFooter() {
                 <li><Link href="/hub" className="hover:text-white transition-colors">Independent Learners</Link></li>
                 <li><Link href="/try-teacher" className="hover:text-white transition-colors">Teacher Sandbox</Link></li>
                 <li><Link href="/schools" className="hover:text-white transition-colors">Schools &amp; Academies</Link></li>
-                <li><Link href="/parent" className="hover:text-white transition-colors">Parents &amp; Guardians</Link></li>
+                <li><Link href="/parents" className="hover:text-white transition-colors">For Parents</Link></li>
+                <li><Link href="/parent-demo" className="hover:text-white transition-colors">Parent Demo</Link></li>
                 <li><Link href="/pricing" className="hover:text-white transition-colors">Plans &amp; Pricing</Link></li>
               </ul>
             </div>

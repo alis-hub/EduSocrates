@@ -80,6 +80,21 @@ class CreateParentAssociationDto {
   relationshipType?: string;
 }
 
+class CreateParentInvitationDto {
+  @IsUUID()
+  studentId: string;
+
+  @IsString()
+  invitedEmail: string;
+
+  @IsString()
+  invitedParentName: string;
+
+  @IsOptional()
+  @IsString()
+  relationshipType?: string;
+}
+
 // ── Controller ───────────────────────────────────────────────────────────── //
 
 @Controller('admin')
@@ -245,6 +260,34 @@ export class AdminController {
   @Roles('SCHOOL_ADMIN', 'SUPER_ADMIN')
   deleteParentAssociation(@CurrentUser() user: any, @Param('id') id: string) {
     return this.adminService.deleteParentAssociation(user.schoolId, id);
+  }
+
+  // ── Parent Invitations ───────────────────────────────────────────────────── //
+  @Get('parent-invitations')
+  @Roles('SCHOOL_ADMIN', 'SUPER_ADMIN')
+  getParentInvitations(@CurrentUser() user: any) {
+    return this.adminService.getParentInvitations(user.schoolId);
+  }
+
+  @Post('parent-invitations')
+  @Roles('SCHOOL_ADMIN', 'SUPER_ADMIN')
+  createParentInvitation(
+    @CurrentUser() user: any,
+    @Body() dto: CreateParentInvitationDto,
+  ) {
+    return this.adminService.createParentInvitation(user.schoolId, user.id, dto);
+  }
+
+  @Post('parent-invitations/:id/resend')
+  @Roles('SCHOOL_ADMIN', 'SUPER_ADMIN')
+  resendParentInvitation(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.adminService.resendParentInvitation(user.schoolId, id);
+  }
+
+  @Post('parent-invitations/:id/revoke')
+  @Roles('SCHOOL_ADMIN', 'SUPER_ADMIN')
+  revokeParentInvitation(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.adminService.revokeParentInvitation(user.schoolId, id);
   }
 
   // ── School Invite Codes ──────────────────────────────────────────────────── //

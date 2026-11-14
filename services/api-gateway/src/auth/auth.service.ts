@@ -39,7 +39,7 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  private buildAuthResponse(user: any) {
+  public buildAuthResponse(user: any) {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,

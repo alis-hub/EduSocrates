@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AdminService {
@@ -264,6 +265,101 @@ export class AdminService {
     );
     if (!rows.length) throw new NotFoundException('Association not found');
     return { deleted: true };
+  }
+
+  // ── School Parent Invitations ──────────────────────────────────────────────── //
+  async getParentInvitations(schoolId: string) {
+    return this.db.queryWithTenant(
+      schoolId,
+      `SELECT pi.*,
+              s.first_name as student_first_name, s.last_name as student_last_name, s.email as student_email
+       FROM parent_invitations pi
+       JOIN users s ON s.id = pi.student_id
+       WHERE pi.school_id = $1
+       ORDER BY pi.created_at DESC`,
+      [schoolId],
+    );
+  }
+
+  async createParentInvitation(
+    schoolId: string,
+    createdById: string,
+    dto: {
+      studentId: string;
+      invitedEmail: string;
+      invitedParentName: string;
+      relationshipType?: string;
+    },
+  ) {
+    // Verify student belongs to this school
+    const [student] = await this.db.queryWithTenant(
+      schoolId,
+      `SELECT id, first_name, last_name FROM users WHERE id = $1 AND school_id = $2 AND role = 'STUDENT'`,
+      [dto.studentId, schoolId],
+    );
+    if (!student) {
+      throw new BadRequestException('Student not found in this academy.');
+    }
+
+    const rawToken = crypto.randomBytes(24).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    const rows = await this.db.queryWithTenant(
+      schoolId,
+      `INSERT INTO parent_invitations
+         (school_id, invited_email, invited_parent_name, invitation_token_hash, student_id, relationship_type, status, created_by, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7, NOW() + INTERVAL '72 hours')
+       RETURNING *`,
+      [
+        schoolId,
+        dto.invitedEmail.trim().toLowerCase(),
+        dto.invitedParentName.trim(),
+        tokenHash,
+        dto.studentId,
+        dto.relationshipType ?? 'GUARDIAN',
+        createdById,
+      ],
+    );
+
+    return {
+      ...rows[0],
+      rawToken,
+      invitationUrl: `/parent/invitation/${rawToken}`,
+    };
+  }
+
+  async resendParentInvitation(schoolId: string, id: string) {
+    const rawToken = crypto.randomBytes(24).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    const rows = await this.db.queryWithTenant(
+      schoolId,
+      `UPDATE parent_invitations
+       SET invitation_token_hash = $1, expires_at = NOW() + INTERVAL '72 hours', status = 'PENDING'
+       WHERE id = $2 AND school_id = $3
+       RETURNING *`,
+      [tokenHash, id, schoolId],
+    );
+    if (!rows.length) throw new NotFoundException('Invitation not found.');
+
+    return {
+      ...rows[0],
+      rawToken,
+      invitationUrl: `/parent/invitation/${rawToken}`,
+    };
+  }
+
+  async revokeParentInvitation(schoolId: string, id: string) {
+    const rows = await this.db.queryWithTenant(
+      schoolId,
+      `UPDATE parent_invitations
+       SET status = 'REVOKED', revoked_at = NOW()
+       WHERE id = $1 AND school_id = $2
+       RETURNING id, status`,
+      [id, schoolId],
+    );
+    if (!rows.length) throw new NotFoundException('Invitation not found.');
+    return { revoked: true, id };
   }
 
   // ── School Invite Codes ──────────────────────────────────────────────────── //

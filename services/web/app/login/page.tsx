@@ -298,6 +298,30 @@ export default function LoginPage() {
               </div>
             </details>
           </div>
+
+          {/* Parent Portal Direct Access & Demo Notice */}
+          <div className="mt-4 p-3 rounded-xl bg-[#FAF9F5] border border-amber-200/70 text-xs text-slate-600 flex items-start gap-2.5">
+            <div className="w-6 h-6 rounded-lg bg-[#F5921D]/15 text-[#F5921D] flex items-center justify-center shrink-0 font-bold text-xs mt-0.5">
+              👨‍👩‍👧
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-[#1E225B] flex items-center justify-between">
+                <span>Are you a Parent or Guardian?</span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                Official parent accounts are school-issued via secure invite links. You can also explore our interactive family portal sandbox.
+              </p>
+              <div className="flex items-center gap-3 mt-2 font-semibold text-[11px]">
+                <Link href="/parent-demo" className="text-[#F5921D] hover:underline">
+                  Try Parent Demo &rarr;
+                </Link>
+                <span className="text-slate-300">|</span>
+                <Link href="/parents" className="text-[#249EA0] hover:underline">
+                  Parent Guide &amp; Token Check &rarr;
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 

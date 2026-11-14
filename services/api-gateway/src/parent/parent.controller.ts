@@ -1,32 +1,32 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
 import { Roles, CurrentUser } from '../auth/decorators';
-import { DatabaseService } from '../database/database.service';
+import { ParentService } from './parent.service';
 
 /**
- * Parent portal read-only endpoints.
- * Parents can view progress for their linked children only.
+ * Authenticated Parent Portal endpoints.
+ * Enforces PARENT role and verifies active parent-child relationship for every student-specific route.
  */
 @Controller('parent')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ParentController {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly parentService: ParentService) {}
 
-  /** GET /parent/children — list student accounts linked to this parent. */
+  /** GET /parent/children — list student accounts linked to this parent with summary KPIs. */
   @Get('children')
   @Roles('PARENT')
   async getMyChildren(@CurrentUser() user: any) {
-    return this.db.queryWithTenant(
-      user.schoolId,
-      `SELECT psa.student_id, psa.relationship_type,
-              u.first_name as student_first_name, u.last_name as student_last_name,
-              u.email as student_email
-       FROM parent_student_associations psa
-       JOIN users u ON u.id = psa.student_id
-       WHERE psa.parent_id = $1 AND psa.school_id = $2 AND u.is_active = TRUE
-       ORDER BY u.last_name, u.first_name`,
-      [user.id, user.schoolId],
-    );
+    return this.parentService.getMyChildren(user);
+  }
+
+  /** GET /parent/children/:studentId/overview — child academic summary & alerts. */
+  @Get('children/:studentId/overview')
+  @Roles('PARENT')
+  async getChildOverview(
+    @CurrentUser() user: any,
+    @Param('studentId') studentId: string,
+  ) {
+    return this.parentService.getChildOverview(user, studentId);
   }
 
   /** GET /parent/children/:studentId/coursework — read-only view of a child's coursework + grades. */
@@ -36,30 +36,70 @@ export class ParentController {
     @CurrentUser() user: any,
     @Param('studentId') studentId: string,
   ) {
-    // Verify this parent is actually linked to the requested student
-    const [link] = await this.db.queryWithTenant(
-      user.schoolId,
-      `SELECT 1 FROM parent_student_associations
-       WHERE parent_id = $1 AND student_id = $2 AND school_id = $3`,
-      [user.id, studentId, user.schoolId],
-    );
-    if (!link) return [];
+    return this.parentService.getChildCoursework(user, studentId);
+  }
 
-    return this.db.queryWithTenant(
-      user.schoolId,
-      `SELECT cw.id, cw.title, cw.description, cw.coursework_type, cw.due_date,
-              cw.max_score, cw.ai_guidance_mode,
-              sub.name as subject_name, sec.name as section_name,
-              s.status as submission_status, s.score, s.submitted_at
-       FROM coursework cw
-       JOIN subjects sub ON sub.id = cw.subject_id
-       JOIN sections sec ON sec.id = cw.section_id
-       JOIN enrollments e ON e.section_id = cw.section_id AND e.student_id = $1
-       LEFT JOIN submissions s ON s.coursework_id = cw.id AND s.student_id = $1
-       WHERE cw.school_id = $2
-       ORDER BY cw.due_date ASC`,
-      [studentId, user.schoolId],
-    );
+  /** GET /parent/children/:studentId/performance — subject-wise grades, trends, strengths/weaknesses. */
+  @Get('children/:studentId/performance')
+  @Roles('PARENT')
+  async getChildPerformance(
+    @CurrentUser() user: any,
+    @Param('studentId') studentId: string,
+  ) {
+    return this.parentService.getChildPerformance(user, studentId);
+  }
+
+  /** GET /parent/children/:studentId/mastery — concept mastery status, recommendations & disclaimer. */
+  @Get('children/:studentId/mastery')
+  @Roles('PARENT')
+  async getChildMastery(
+    @CurrentUser() user: any,
+    @Param('studentId') studentId: string,
+  ) {
+    return this.parentService.getChildMastery(user, studentId);
+  }
+
+  /** GET /parent/children/:studentId/activity — study minutes, weekly consistency, AI Tutor summary. */
+  @Get('children/:studentId/activity')
+  @Roles('PARENT')
+  async getChildActivity(
+    @CurrentUser() user: any,
+    @Param('studentId') studentId: string,
+  ) {
+    return this.parentService.getChildActivity(user, studentId);
+  }
+
+  /** GET /parent/children/:studentId/attendance — present/absent counts and school notices. */
+  @Get('children/:studentId/attendance')
+  @Roles('PARENT')
+  async getChildAttendance(
+    @CurrentUser() user: any,
+    @Param('studentId') studentId: string,
+  ) {
+    return this.parentService.getChildAttendance(user, studentId);
+  }
+
+  /** GET /parent/children/:studentId/feedback — teacher comments and observations. */
+  @Get('children/:studentId/feedback')
+  @Roles('PARENT')
+  async getChildFeedback(
+    @CurrentUser() user: any,
+    @Param('studentId') studentId: string,
+  ) {
+    return this.parentService.getChildFeedback(user, studentId);
+  }
+
+  /** GET /parent/notifications — parent alerts. */
+  @Get('notifications')
+  @Roles('PARENT')
+  async getNotifications(@CurrentUser() user: any) {
+    return this.parentService.getNotifications(user);
+  }
+
+  /** GET /parent/profile — parent profile info. */
+  @Get('profile')
+  @Roles('PARENT')
+  async getProfile(@CurrentUser() user: any) {
+    return this.parentService.getProfile(user);
   }
 }
-
