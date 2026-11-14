@@ -400,7 +400,7 @@ export default function SocraticTutorPage() {
                   </div>
                   <div className="bg-red-50/60 p-3 rounded-lg border border-red-100 text-slate-700">
                     <span className="font-semibold text-red-700 block mb-1">Chatbot Response:</span>
-                    &ldquo;The formula is $m_1 v_1 + m_2 v_2 = (m_1 + m_2) v_f$. Substituting: $(3)(4) + (2)(-1) = (3+2) v_f$. 12 - 2 = 5 v_f. 10 = 5 v_f, so $v_f = 2\text{ m/s}$.&rdquo;
+                    &ldquo;The formula is m₁v₁ + m₂v₂ = (m₁ + m₂)vf. Substituting: (3)(4) + (2)(-1) = (3+2)vf. 12 - 2 = 5vf. 10 = 5vf, so vf = 2 m/s.&rdquo;
                   </div>
                   <div className="text-[11px] text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200">
                     <strong>Outcome:</strong> Student copies &ldquo;2 m/s&rdquo;. When asked on the exam why the 1 m/s was negative, they blank out and write +1 m/s, failing the test.
