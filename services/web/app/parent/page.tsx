@@ -17,6 +17,7 @@ import {
   Compass,
   FileText,
   Filter,
+  GraduationCap,
   Heart,
   HelpCircle,
   Info,
@@ -45,6 +46,7 @@ interface LinkedChild {
   school_name?: string;
   class_name?: string;
   section_name?: string;
+  avatar_url?: string;
   avg_score?: number;
   completed_count?: number;
   pending_count?: number;
@@ -254,42 +256,166 @@ export default function AuthenticatedParentPortal() {
         ) : (
           <>
             {/* Child Selector Banner */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Linked Student:
-                </span>
-                <div className="flex items-center gap-2">
-                  {children.map((child) => (
-                    <button
-                      key={child.student_id}
-                      type="button"
-                      onClick={() => handleSelectChild(child.student_id)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
-                        selectedChildId === child.student_id
-                          ? 'bg-[#1E225B] text-white shadow-sm ring-2 ring-[#1E225B]/20'
-                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] font-bold">
-                        {child.student_first_name[0]}{child.student_last_name[0]}
-                      </div>
-                      <span>
-                        {child.student_first_name} {child.student_last_name}
-                      </span>
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${selectedChildId === child.student_id ? 'bg-white/20' : 'bg-slate-200 text-slate-600'}`}>
-                        {child.class_name || 'Grade 12'}
-                      </span>
-                    </button>
-                  ))}
+            <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-[#1E225B]" />
+                    <span>Linked Student (Select to View):</span>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {children.map((child) => {
+                      const isSelected = selectedChildId === child.student_id;
+                      return (
+                        <button
+                          key={child.student_id}
+                          type="button"
+                          onClick={() => handleSelectChild(child.student_id)}
+                          className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-left transition-all ${
+                            isSelected
+                              ? 'bg-[#1E225B] text-white shadow-md ring-2 ring-[#1E225B]/20 scale-[1.01]'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}
+                        >
+                          {/* Student Avatar / Profile Picture */}
+                          <div className="relative shrink-0">
+                            {child.avatar_url ? (
+                              <img
+                                src={child.avatar_url}
+                                alt={`${child.student_first_name} ${child.student_last_name}`}
+                                className={`w-11 h-11 rounded-full object-cover border-2 ${
+                                  isSelected ? 'border-amber-400' : 'border-slate-300'
+                                }`}
+                              />
+                            ) : (
+                              <div
+                                className={`w-11 h-11 rounded-full ${
+                                  isSelected ? 'bg-amber-500 text-white' : 'bg-[#1E225B] text-white'
+                                } flex items-center justify-center text-xs font-bold shadow-xs`}
+                              >
+                                {child.student_first_name[0]}
+                                {child.student_last_name[0]}
+                              </div>
+                            )}
+                            {isSelected && (
+                              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
+                            )}
+                          </div>
+
+                          {/* Student Name, Grade & Section */}
+                          <div className="min-w-0 pr-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-sm truncate">
+                                {child.student_first_name} {child.student_last_name}
+                              </span>
+                              {isSelected && (
+                                <span className="text-[10px] font-bold bg-[#F5921D] text-white px-1.5 py-0.2 rounded-md shrink-0">
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+                              <span
+                                className={`font-semibold px-2 py-0.5 rounded-md ${
+                                  isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                                }`}
+                              >
+                                {child.class_name || 'Grade 12'}
+                              </span>
+                              <span
+                                className={`font-semibold px-2 py-0.5 rounded-md ${
+                                  isSelected
+                                    ? 'bg-amber-400/25 text-amber-200 border border-amber-300/30'
+                                    : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                }`}
+                              >
+                                {child.section_name || 'Section A'}
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-500 font-medium bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 shrink-0">
+                  <div>
+                    Academy: <strong className="text-slate-800">{selectedChild?.school_name || 'Horizon Academy'}</strong>
+                  </div>
+                  <span className="hidden sm:inline text-slate-300">|</span>
+                  <div>
+                    Relationship: <strong className="text-slate-800">{selectedChild?.relationship_type || 'Guardian'}</strong>
+                  </div>
                 </div>
               </div>
-
-              <div className="text-xs text-slate-500 font-medium">
-                Academy: <strong>{selectedChild?.school_name || 'Horizon Academy'}</strong> · Relationship:{' '}
-                <strong>{selectedChild?.relationship_type || 'Guardian'}</strong>
-              </div>
             </div>
+
+            {/* Active Student Profile Header Banner */}
+            {selectedChild && (
+              <div className="bg-gradient-to-r from-slate-900 via-[#1E225B] to-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <div className="flex items-center gap-4">
+                  <div className="relative shrink-0">
+                    {selectedChild.avatar_url ? (
+                      <img
+                        src={selectedChild.avatar_url}
+                        alt={`${selectedChild.student_first_name} ${selectedChild.student_last_name}`}
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-lg"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#F5921D] text-white flex items-center justify-center text-xl font-black shadow-lg">
+                        {selectedChild.student_first_name[0]}
+                        {selectedChild.student_last_name[0]}
+                      </div>
+                    )}
+                    <span className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-[#1E225B]" title="Active Student">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+                        {selectedChild.student_first_name} {selectedChild.student_last_name}
+                      </h2>
+                      <span className="bg-[#F5921D] text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                        {selectedChild.class_name || 'Grade 12'}
+                      </span>
+                      <span className="bg-teal-500/20 text-teal-300 border border-teal-400/30 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
+                        {selectedChild.section_name || 'Section A'}
+                      </span>
+                      <span className="bg-white/10 text-slate-200 text-[11px] font-medium px-2 py-0.5 rounded-md">
+                        {selectedChild.student_email}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-slate-300 flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{selectedChild.school_name || 'Horizon Academy'}</span>
+                      </span>
+                      <span className="text-slate-600">•</span>
+                      <span>Relationship: <strong className="text-white">{selectedChild.relationship_type || 'Guardian'}</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-white/10">
+                  <div className="bg-white/10 backdrop-blur-xs px-3.5 py-2 rounded-xl text-right">
+                    <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider">Average Score</div>
+                    <div className="text-xl font-black text-amber-400">
+                      {overviewData?.overall_avg_score !== undefined ? `${overviewData.overall_avg_score}%` : '91.2%'}
+                    </div>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-xs px-3.5 py-2 rounded-xl text-right">
+                    <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider">Attendance</div>
+                    <div className="text-xl font-black text-emerald-400">
+                      {attendanceData?.attendance_rate !== undefined ? `${attendanceData.attendance_rate}%` : '98.5%'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Navigation Tabs */}
             <div className="flex gap-1.5 overflow-x-auto bg-white border border-slate-200 rounded-2xl p-1.5 shadow-xs">

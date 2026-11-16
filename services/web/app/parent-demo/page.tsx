@@ -43,9 +43,14 @@ interface DemoChild {
   name: string;
   grade: string;
   section: string;
+  avatarUrl: string;
   relationship: string;
   avatarInitials: string;
   color: string;
+  campus: string;
+  homeroomTeacher: string;
+  studentIdNumber: string;
+  academicStanding: string;
   overallAverage: number;
   completedCount: number;
   pendingCount: number;
@@ -112,6 +117,11 @@ const DEMO_CHILDREN: DemoChild[] = [
     name: 'Alex Chen',
     grade: 'Grade 12',
     section: 'Section A',
+    avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=240&auto=format&fit=crop&q=80',
+    campus: 'Horizon High Campus (North)',
+    homeroomTeacher: 'Dr. Robert Harrison',
+    studentIdNumber: 'HA-2026-8814',
+    academicStanding: "Principal's Honor Roll",
     relationship: 'Mother',
     avatarInitials: 'AC',
     color: 'bg-blue-600',
@@ -319,6 +329,11 @@ const DEMO_CHILDREN: DemoChild[] = [
     name: 'Emily Chen',
     grade: 'Grade 9',
     section: 'Section B',
+    avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&auto=format&fit=crop&q=80',
+    campus: 'Horizon Middle Campus (West)',
+    homeroomTeacher: 'Ms. Clara Vance',
+    studentIdNumber: 'HA-2026-9421',
+    academicStanding: 'Distinguished Scholar',
     relationship: 'Mother',
     avatarInitials: 'EC',
     color: 'bg-emerald-600',
@@ -571,39 +586,138 @@ export default function ParentDemoPage() {
       {/* ── Main Demo Container ── */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 space-y-6">
         {/* Child Selector Banner */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Linked Children:
+        <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#1E225B]" />
+                <span>Linked Children (Select Student):</span>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                {DEMO_CHILDREN.map((c) => {
+                  const isSelected = selectedChildId === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedChildId(c.id as any)}
+                      className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-left transition-all ${
+                        isSelected
+                          ? 'bg-[#1E225B] text-white shadow-md ring-2 ring-[#1E225B]/20 scale-[1.01]'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      {/* Student Profile Picture with Fallback Avatar */}
+                      <div className="relative shrink-0">
+                        <img
+                          src={c.avatarUrl}
+                          alt={c.name}
+                          className={`w-11 h-11 rounded-full object-cover border-2 ${
+                            isSelected ? 'border-amber-400' : 'border-slate-300'
+                          }`}
+                        />
+                        {isSelected && (
+                          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
+                        )}
+                      </div>
+
+                      {/* Name, Grade & Section */}
+                      <div className="min-w-0 pr-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-sm truncate">{c.name}</span>
+                          {isSelected && (
+                            <span className="text-[10px] font-bold bg-[#F5921D] text-white px-1.5 py-0.2 rounded-md shrink-0">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+                          <span
+                            className={`font-semibold px-2 py-0.5 rounded-md ${
+                              isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {c.grade}
+                          </span>
+                          <span
+                            className={`font-semibold px-2 py-0.5 rounded-md ${
+                              isSelected
+                                ? 'bg-amber-400/25 text-amber-200 border border-amber-300/30'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}
+                          >
+                            {c.section}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              {DEMO_CHILDREN.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setSelectedChildId(c.id as any)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
-                    selectedChildId === c.id
-                      ? 'bg-[#1E225B] text-white shadow-sm ring-2 ring-[#1E225B]/20'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
-                  }`}
-                >
-                  <div
-                    className={`w-6 h-6 rounded-full ${c.color} text-white flex items-center justify-center text-[10px] font-bold`}
-                  >
-                    {c.avatarInitials}
-                  </div>
-                  <span>{c.name}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${selectedChildId === c.id ? 'bg-white/20' : 'bg-slate-200 text-slate-600'}`}>
-                    {c.grade}
-                  </span>
-                </button>
-              ))}
+
+            <div className="text-xs text-slate-500 font-medium bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 shrink-0">
+              <div>
+                Academy: <strong className="text-slate-800">Horizon Academy</strong>
+              </div>
+              <span className="hidden sm:inline text-slate-300">|</span>
+              <div>
+                Relationship: <strong className="text-slate-800">{child.relationship} (Eleanor Chen)</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Active Student Profile Header Banner ── */}
+        <div className="bg-gradient-to-r from-slate-900 via-[#1E225B] to-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <img
+                src={child.avatarUrl}
+                alt={child.name}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-lg"
+              />
+              <span className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-[#1E225B]" title="Active Student">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight">{child.name}</h2>
+                <span className="bg-[#F5921D] text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                  {child.grade}
+                </span>
+                <span className="bg-teal-500/20 text-teal-300 border border-teal-400/30 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
+                  {child.section}
+                </span>
+                <span className="bg-white/10 text-slate-200 text-[11px] font-medium px-2 py-0.5 rounded-md">
+                  ID: {child.studentIdNumber}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs text-slate-300 flex-wrap">
+                <span className="flex items-center gap-1">
+                  <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{child.campus}</span>
+                </span>
+                <span className="text-slate-600">•</span>
+                <span>Advisor: <strong className="text-white">{child.homeroomTeacher}</strong></span>
+                <span className="text-slate-600">•</span>
+                <span className="text-amber-300 font-semibold">{child.academicStanding}</span>
+              </div>
             </div>
           </div>
 
-          <div className="text-xs text-slate-500 font-medium">
-            Academy: <strong>Horizon Academy</strong> · Relationship: <strong>{child.relationship}</strong>
+          <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-white/10">
+            <div className="bg-white/10 backdrop-blur-xs px-3.5 py-2 rounded-xl text-right">
+              <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider">Overall Average</div>
+              <div className="text-xl font-black text-amber-400">{child.overallAverage}%</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-xs px-3.5 py-2 rounded-xl text-right">
+              <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider">Attendance</div>
+              <div className="text-xl font-black text-emerald-400">{child.attendanceRate}%</div>
+            </div>
           </div>
         </div>
 
