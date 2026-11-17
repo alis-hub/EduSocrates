@@ -3,52 +3,22 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
-  OnModuleInit,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { AuthService } from '../auth/auth.service';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
+import { isDemoMode, normalizeEmail } from '../common/security';
 
 @Injectable()
-export class ParentService implements OnModuleInit {
+export class ParentService {
   constructor(
     private readonly db: DatabaseService,
     private readonly authService: AuthService,
+    private readonly config: ConfigService,
   ) {}
-
-  async onModuleInit() {
-    await this.ensureTablesExist();
-  }
-
-  private async ensureTablesExist() {
-    try {
-      await this.db.query(`
-        CREATE TABLE IF NOT EXISTS parent_invitations (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
-            invited_email VARCHAR(255) NOT NULL,
-            invited_parent_name VARCHAR(128) NOT NULL,
-            invitation_token_hash VARCHAR(255) NOT NULL UNIQUE,
-            student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            relationship_type VARCHAR(32) DEFAULT 'GUARDIAN' NOT NULL,
-            status VARCHAR(32) DEFAULT 'PENDING' NOT NULL,
-            created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-            created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            expires_at TIMESTAMPTZ NOT NULL,
-            accepted_at TIMESTAMPTZ,
-            accepted_by UUID REFERENCES users(id) ON DELETE SET NULL,
-            revoked_at TIMESTAMPTZ,
-            revocation_reason TEXT
-        );
-        CREATE INDEX IF NOT EXISTS idx_parent_invitations_school ON parent_invitations(school_id);
-        CREATE INDEX IF NOT EXISTS idx_parent_invitations_token ON parent_invitations(invitation_token_hash);
-        CREATE INDEX IF NOT EXISTS idx_parent_invitations_email ON parent_invitations(invited_email);
-      `);
-    } catch (err) {
-      console.warn('Parent table initialization notice:', err);
-    }
-  }
 
   /**
    * Verify authenticated parent has active association with the given student.
@@ -560,12 +530,16 @@ export class ParentService implements OnModuleInit {
   /**
    * Validate a parent invitation token hash (unprotected endpoint).
    */
+  private isDemoToken(token: string): boolean {
+    return isDemoMode(this.config) && token.trim().startsWith('demo-');
+  }
+
   async validateInvitationToken(token: string) {
     if (!token || !token.trim()) {
       return { valid: false, error: 'Invitation token is missing.' };
     }
 
-    if (token.trim() === 'demo-invitation-token' || token.trim().startsWith('demo-')) {
+    if (this.isDemoToken(token)) {
       return {
         valid: true,
         id: 'demo-invitation-uuid',
@@ -583,7 +557,7 @@ export class ParentService implements OnModuleInit {
 
     const [invitation] = await this.db.query(
       `SELECT pi.*, s.name as school_name,
-              u.first_name as student_first_name, u.last_name as student_last_name, u.email as student_email
+              u.first_name as student_first_name, u.last_name as student_last_name
        FROM parent_invitations pi
        JOIN schools s ON s.id = pi.school_id
        JOIN users u ON u.id = pi.student_id
@@ -604,10 +578,9 @@ export class ParentService implements OnModuleInit {
       return { valid: false, error: 'This invitation has expired. Please request a new invitation from your school.' };
     }
 
-    // Check if user account already exists with invited email
     const [existing] = await this.db.query(
-      `SELECT id, email, first_name, last_name, role FROM users WHERE email = $1 AND is_active = TRUE`,
-      [invitation.invited_email],
+      `SELECT id FROM users WHERE school_id = $1 AND LOWER(email) = $2 AND is_active = TRUE`,
+      [invitation.school_id, normalizeEmail(invitation.invited_email)],
     );
 
     return {
@@ -624,7 +597,8 @@ export class ParentService implements OnModuleInit {
   }
 
   /**
-   * Accept invitation: create new Parent account or link existing parent, then return JWT.
+   * Accept invitation: create a new Parent account, or link an existing PARENT account of the same school.
+   * Linking an existing account requires that account's password; nobody is ever signed in just for holding a link.
    */
   async acceptInvitation(dto: {
     token: string;
@@ -632,72 +606,82 @@ export class ParentService implements OnModuleInit {
     firstName?: string;
     lastName?: string;
   }) {
-    if (dto.token.trim() === 'demo-invitation-token' || dto.token.trim().startsWith('demo-')) {
-      const demoUser = {
+    const token = (dto.token ?? '').trim();
+
+    if (this.isDemoToken(token)) {
+      return this.authService.buildAuthResponse({
         id: '11111111-1111-4111-a111-111111110004',
         email: 'parent@horizon.edu',
         role: 'PARENT',
         school_id: '11111111-1111-4111-a111-111111111111',
         first_name: dto.firstName || 'Eleanor',
         last_name: dto.lastName || 'Chen',
-      };
-      return this.authService.buildAuthResponse(demoUser);
+      });
     }
+    if (!token) throw new BadRequestException('Invitation token is missing.');
 
-    const validation = await this.validateInvitationToken(dto.token);
-    if (!validation.valid) {
-      throw new BadRequestException(validation.error);
-    }
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-    const tokenHash = crypto.createHash('sha256').update(dto.token.trim()).digest('hex');
-    const [invitation] = await this.db.query(
-      `SELECT * FROM parent_invitations WHERE invitation_token_hash = $1`,
-      [tokenHash],
-    );
-
-    let parentUser: any;
-    const [existing] = await this.db.query(
-      `SELECT * FROM users WHERE email = $1`,
-      [invitation.invited_email],
-    );
-
-    if (existing) {
-      parentUser = existing;
-    } else {
-      if (!dto.password || dto.password.length < 8) {
-        throw new BadRequestException('A secure password of at least 8 characters is required.');
-      }
-      const passwordHash = await bcrypt.hash(dto.password, 10);
-      const nameParts = invitation.invited_parent_name.split(' ');
-      const firstName = dto.firstName?.trim() || nameParts[0] || 'Parent';
-      const lastName = dto.lastName?.trim() || nameParts.slice(1).join(' ') || 'Guardian';
-
-      const created = await this.db.query(
-        `INSERT INTO users (school_id, role, email, password_hash, first_name, last_name, is_active)
-         VALUES ($1, 'PARENT', $2, $3, $4, $5, TRUE)
-         RETURNING *`,
-        [invitation.school_id, invitation.invited_email, passwordHash, firstName, lastName],
+    const parentUser = await this.db.withTransaction(async (client) => {
+      const inv = await client.query(
+        `SELECT * FROM parent_invitations WHERE invitation_token_hash = $1 FOR UPDATE`,
+        [tokenHash],
       );
-      parentUser = created[0];
-    }
+      const invitation = inv.rows[0];
+      if (!invitation) throw new BadRequestException('Invalid or unknown invitation token.');
+      if (invitation.status !== 'PENDING') throw new BadRequestException('This invitation is no longer valid.');
+      if (new Date(invitation.expires_at) < new Date()) {
+        throw new BadRequestException('This invitation has expired. Please request a new invitation from your school.');
+      }
+      await client.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [invitation.school_id]);
 
-    // Activate parent-child association
-    await this.db.query(
-      `INSERT INTO parent_student_associations (school_id, parent_id, student_id, relationship_type)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (parent_id, student_id) DO UPDATE SET relationship_type = EXCLUDED.relationship_type`,
-      [invitation.school_id, parentUser.id, invitation.student_id, invitation.relationship_type],
-    );
+      const email = normalizeEmail(invitation.invited_email);
+      const existingRes = await client.query(
+        `SELECT * FROM users WHERE school_id = $1 AND LOWER(email) = $2 AND is_active = TRUE`,
+        [invitation.school_id, email],
+      );
+      let user: any;
+      if (existingRes.rows.length) {
+        user = existingRes.rows[0];
+        if (user.role !== 'PARENT') {
+          throw new ForbiddenException('This email already belongs to a non-parent account at this school.');
+        }
+        if (!dto.password || !(await bcrypt.compare(dto.password, user.password_hash))) {
+          throw new UnauthorizedException('Enter the password of your existing parent account to accept this invitation.');
+        }
+      } else {
+        if (!dto.password || dto.password.length < 8 || dto.password.length > 72) {
+          throw new BadRequestException('A password of 8 to 72 characters is required.');
+        }
+        const passwordHash = await bcrypt.hash(dto.password, 10);
+        const nameParts = String(invitation.invited_parent_name).split(' ');
+        const created = await client.query(
+          `INSERT INTO users (school_id, role, email, password_hash, first_name, last_name, is_active)
+           VALUES ($1, 'PARENT', $2, $3, $4, $5, TRUE) RETURNING *`,
+          [
+            invitation.school_id, email, passwordHash,
+            (dto.firstName?.trim() || nameParts[0] || 'Parent').slice(0, 100),
+            (dto.lastName?.trim() || nameParts.slice(1).join(' ') || 'Guardian').slice(0, 100),
+          ],
+        );
+        user = created.rows[0];
+      }
 
-    // Mark invitation accepted
-    await this.db.query(
-      `UPDATE parent_invitations
-       SET status = 'ACCEPTED', accepted_at = CURRENT_TIMESTAMP, accepted_by = $1
-       WHERE id = $2`,
-      [parentUser.id, invitation.id],
-    );
+      await client.query(
+        `INSERT INTO parent_student_associations (school_id, parent_id, student_id, relationship_type)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (parent_id, student_id) DO UPDATE SET relationship_type = EXCLUDED.relationship_type`,
+        [invitation.school_id, user.id, invitation.student_id, invitation.relationship_type],
+      );
+      await client.query(
+        `UPDATE parent_invitations
+         SET status = 'ACCEPTED', accepted_at = CURRENT_TIMESTAMP, accepted_by = $1
+         WHERE id = $2`,
+        [user.id, invitation.id],
+      );
+      return user;
+    });
 
-    // Generate JWT auth session
     return this.authService.buildAuthResponse(parentUser);
   }
 }

@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import {
   IsString, IsOptional, IsUUID, IsInt, IsNotEmpty, Min,
-  IsEmail, MinLength, IsEnum, IsDateString, IsArray,
+  IsEmail, MinLength, MaxLength, IsEnum, IsDateString, IsArray,
 } from 'class-validator';
 import { AdminService } from './admin.service';
 import { AuthService } from '../auth/auth.service';
@@ -56,7 +56,7 @@ class CreateAllocationDto {
 const ALLOWED_USER_ROLES = ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] as const;
 class CreateUserDto {
   @IsEmail() email: string;
-  @IsString() @MinLength(6) password: string;
+  @IsString() @MinLength(8) @MaxLength(72) password: string;
   @IsString() @IsNotEmpty() firstName: string;
   @IsString() @IsNotEmpty() lastName: string;
   @IsEnum(ALLOWED_USER_ROLES) role: string;
