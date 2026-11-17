@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post, Body, Param, UseGuards, Put, Query, Patch,
+  Controller, Get, Post, Body, Param, UseGuards, Put, Query, Patch, ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   IsString, IsNotEmpty, IsUUID, IsEnum, IsOptional, IsNumber, IsInt,
@@ -32,22 +32,22 @@ export enum CourseworkAccessLevel {
 class CreateCourseworkDto {
   @IsUUID() sectionId: string;
   @IsUUID() subjectId: string;
-  @IsString() @IsNotEmpty() title: string;
-  @IsString() @IsNotEmpty() description: string;
+  @IsString() @IsNotEmpty() @MaxLength(200) title: string;
+  @IsString() @IsNotEmpty() @MaxLength(20000) description: string;
 
   @IsEnum(CourseworkType)
   @Transform(({ obj, value }) => value ?? obj.type ?? obj.assessmentType ?? 'HOMEWORK')
   courseworkType: CourseworkType;
 
-  @IsOptional() @IsNumber() @Min(1) maxScore?: number;
+  @IsOptional() @IsNumber() @Min(1) @Max(1000) maxScore?: number;
   @IsOptional() @IsDateString() dueDate?: string;
   @IsEnum(AiGuidanceMode) @IsOptional() aiGuidanceMode?: AiGuidanceMode;
-  @IsOptional() @IsString() aiSystemNotes?: string;
-  @IsOptional() @IsString() rubric?: string;
+  @IsOptional() @IsString() @MaxLength(5000) aiSystemNotes?: string;
+  @IsOptional() @IsString() @MaxLength(10000) rubric?: string;
   @IsOptional() @IsInt() @Min(1) timeLimitMinutes?: number;
   @IsOptional() @IsBoolean() isPublic?: boolean;
   @IsOptional() @IsEnum(CourseworkAccessLevel) accessLevel?: CourseworkAccessLevel;
-  @IsOptional() @IsString() socraticSystemPromptOverride?: string;
+  @IsOptional() @IsString() @MaxLength(5000) socraticSystemPromptOverride?: string;
   @IsOptional() @IsString() assessmentType?: string;
   @IsOptional() @IsString() type?: string;
 }
@@ -58,7 +58,7 @@ class UpdateVisibilityDto {
 
 class GradeSubmissionDto {
   @IsNumber() @Min(0) @Max(1000) score: number;
-  @IsOptional() @IsString() teacherFeedback?: string;
+  @IsOptional() @IsString() @MaxLength(5000) teacherFeedback?: string;
 }
 
 class StudentSubmitDto {
@@ -75,7 +75,7 @@ export class CourseworkController {
   @Post('coursework')
   @Roles('TEACHER', 'SCHOOL_ADMIN')
   createCoursework(@CurrentUser() user: any, @Body() dto: CreateCourseworkDto) {
-    return this.courseworkService.createCoursework(user.schoolId, user.id, dto);
+    return this.courseworkService.createCoursework(user, dto);
   }
 
   @Get('teacher/coursework')
@@ -88,26 +88,26 @@ export class CourseworkController {
   @Roles('TEACHER', 'SCHOOL_ADMIN')
   updateVisibility(
     @CurrentUser() user: any,
-    @Param('id') courseworkId: string,
+    @Param('id', new ParseUUIDPipe()) courseworkId: string,
     @Body() dto: UpdateVisibilityDto,
   ) {
-    return this.courseworkService.updateVisibility(user.schoolId, courseworkId, dto.accessLevel);
+    return this.courseworkService.updateVisibility(user, courseworkId, dto.accessLevel);
   }
 
   @Get('teacher/coursework/:id/submissions')
   @Roles('TEACHER', 'SCHOOL_ADMIN')
-  getSubmissions(@CurrentUser() user: any, @Param('id') courseworkId: string) {
-    return this.courseworkService.getSubmissions(user.schoolId, courseworkId);
+  getSubmissions(@CurrentUser() user: any, @Param('id', new ParseUUIDPipe()) courseworkId: string) {
+    return this.courseworkService.getSubmissions(user, courseworkId);
   }
 
   @Put('teacher/submissions/:id/grade')
   @Roles('TEACHER', 'SCHOOL_ADMIN')
   gradeSubmission(
     @CurrentUser() user: any,
-    @Param('id') submissionId: string,
+    @Param('id', new ParseUUIDPipe()) submissionId: string,
     @Body() dto: GradeSubmissionDto,
   ) {
-    return this.courseworkService.gradeSubmission(user.schoolId, submissionId, dto);
+    return this.courseworkService.gradeSubmission(user, submissionId, dto);
   }
 
   @Get('student/coursework')
@@ -128,8 +128,8 @@ export class CourseworkController {
 
   @Get('teacher/coursework/:id/ai-transcripts')
   @Roles('TEACHER', 'SCHOOL_ADMIN')
-  getAiTranscripts(@CurrentUser() user: any, @Param('id') courseworkId: string) {
-    return this.courseworkService.getAiTranscripts(user.schoolId, courseworkId);
+  getAiTranscripts(@CurrentUser() user: any, @Param('id', new ParseUUIDPipe()) courseworkId: string) {
+    return this.courseworkService.getAiTranscripts(user, courseworkId);
   }
 }
 

@@ -1,11 +1,14 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import { Actor, assertCanManageCoursework, assertCanTeachSection } from '../common/teaching-access';
 
 @Injectable()
 export class CourseworkService {
   constructor(private readonly db: DatabaseService) {}
 
-  async createCoursework(schoolId: string, creatorId: string, dto: any) {
+  async createCoursework(actor: Actor, dto: any) {
+    const schoolId = actor.schoolId, creatorId = actor.id;
+    await assertCanTeachSection(this.db, actor, dto.sectionId, dto.subjectId);
     const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const accessLevel = dto.accessLevel ?? (dto.isPublic ? 'PUBLIC_DIRECTORY' : 'PRIVATE');
     const isPublic = accessLevel === 'PUBLIC_DIRECTORY' || Boolean(dto.isPublic);
@@ -36,7 +39,9 @@ export class CourseworkService {
     return rows[0];
   }
 
-  async updateVisibility(schoolId: string, courseworkId: string, accessLevel: string) {
+  async updateVisibility(actor: Actor, courseworkId: string, accessLevel: string) {
+    const schoolId = actor.schoolId;
+    await assertCanManageCoursework(this.db, actor, courseworkId);
     const isPublic = accessLevel === 'PUBLIC_DIRECTORY';
     const rows = await this.db.queryWithTenant(
       schoolId,
@@ -151,7 +156,9 @@ export class CourseworkService {
     return rows[0];
   }
 
-  async getSubmissions(schoolId: string, courseworkId: string) {
+  async getSubmissions(actor: Actor, courseworkId: string) {
+    const schoolId = actor.schoolId;
+    await assertCanManageCoursework(this.db, actor, courseworkId);
     return this.db.queryWithTenant(
       schoolId,
       `SELECT sub.*, u.first_name, u.last_name, u.email
@@ -195,7 +202,12 @@ export class CourseworkService {
     return rows[0];
   }
 
-  async gradeSubmission(schoolId: string, submissionId: string, dto: any) {
+  async gradeSubmission(actor: Actor, submissionId: string, dto: any) {
+    const schoolId = actor.schoolId;
+    const owner = await this.db.queryWithTenant(
+      schoolId, `SELECT coursework_id FROM submissions WHERE id = $1 AND school_id = $2`, [submissionId, schoolId]);
+    if (!owner.length) throw new NotFoundException('Submission not found.');
+    await assertCanManageCoursework(this.db, actor, owner[0].coursework_id);
     const score = Number(dto.score);
     if (!Number.isFinite(score) || score < 0) throw new BadRequestException('Invalid score.');
     const rows = await this.db.queryWithTenant(
@@ -214,7 +226,9 @@ export class CourseworkService {
     return rows[0];
   }
 
-  async getAiTranscripts(schoolId: string, courseworkId: string) {
+  async getAiTranscripts(actor: Actor, courseworkId: string) {
+    const schoolId = actor.schoolId;
+    await assertCanManageCoursework(this.db, actor, courseworkId);
     return this.db.queryWithTenant(
       schoolId,
       `SELECT ats.id as session_id, ats.student_id, ats.session_status,

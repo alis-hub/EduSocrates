@@ -1,8 +1,9 @@
-import { Injectable, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
 import { aiGatewayHeaders } from '../common/security';
+import { assertCanManageCoursework } from '../common/teaching-access';
 import type { Response } from 'express';
 import * as http from 'http';
 import * as https from 'https';
@@ -309,13 +310,24 @@ export class AiProxyService {
   }
 
   /** Messages of one session, only if it belongs to the caller's own school. */
-  async getSessionMessages(schoolId: string, sessionId: string) {
+  async getSessionMessages(schoolId: string, sessionId: string, viewer?: { id: string; role: string }) {
     const owned = await this.db.queryWithTenant(
       schoolId,
-      `SELECT 1 FROM ai_tutoring_sessions WHERE id = $1 AND school_id = $2`,
+      `SELECT coursework_id FROM ai_tutoring_sessions WHERE id = $1 AND school_id = $2`,
       [sessionId, schoolId],
     );
     if (!owned.length) throw new NotFoundException('Session not found');
+
+    // Teachers may only open transcripts of coursework they manage, and every view is logged.
+    if (viewer) {
+      if (!owned[0].coursework_id) throw new ForbiddenException('This session is not linked to your coursework.');
+      await assertCanManageCoursework(this.db, { id: viewer.id, role: viewer.role, schoolId }, owned[0].coursework_id);
+      await this.db.queryWithTenant(
+        schoolId,
+        `INSERT INTO transcript_access_log (school_id, viewer_id, session_id, coursework_id) VALUES ($1,$2,$3,$4)`,
+        [schoolId, viewer.id, sessionId, owned[0].coursework_id],
+      );
+    }
 
     const messages = await this.db.queryWithTenant(
       schoolId,

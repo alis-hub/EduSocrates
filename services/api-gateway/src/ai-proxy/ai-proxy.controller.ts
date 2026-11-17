@@ -64,6 +64,6 @@ export class AiProxyController {
   @Get('teacher/ai-sessions/:sessionId/messages')
   @Roles('TEACHER', 'SCHOOL_ADMIN')
   getSessionMessages(@CurrentUser() user: any, @Param('sessionId', new ParseUUIDPipe()) sessionId: string) {
-    return this.aiProxyService.getSessionMessages(user.schoolId, sessionId);
+    return this.aiProxyService.getSessionMessages(user.schoolId, sessionId, { id: user.id, role: user.role });
   }
 }
