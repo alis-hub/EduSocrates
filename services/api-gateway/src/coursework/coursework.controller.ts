@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import {
   IsString, IsNotEmpty, IsUUID, IsEnum, IsOptional, IsNumber, IsInt,
-  IsDateString, Min, IsArray, IsBoolean,
+  IsDateString, Min, Max, MaxLength, IsArray, IsBoolean,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { CourseworkService } from './coursework.service';
@@ -57,13 +57,13 @@ class UpdateVisibilityDto {
 }
 
 class GradeSubmissionDto {
-  @IsNumber() @Min(0) score: number;
+  @IsNumber() @Min(0) @Max(1000) score: number;
   @IsOptional() @IsString() teacherFeedback?: string;
 }
 
 class StudentSubmitDto {
   @IsUUID() courseworkId: string;
-  @IsOptional() @IsString() submissionText?: string;
+  @IsOptional() @IsString() @MaxLength(50000) submissionText?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) attachmentUrls?: string[];
 }
 

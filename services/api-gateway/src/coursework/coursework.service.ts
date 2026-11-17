@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 
 @Injectable()
@@ -90,7 +90,10 @@ export class CourseworkService {
 
     return this.db.queryWithTenant(
       schoolId,
-      `SELECT cw.*, sub.name as subject_name, sec.name as section_name,
+      `SELECT cw.id, cw.school_id, cw.section_id, cw.subject_id, cw.title, cw.description,
+              cw.coursework_type, cw.max_score, cw.due_date, cw.ai_guidance_mode,
+              cw.time_limit_minutes, cw.is_public, cw.access_level, cw.created_at,
+              sub.name as subject_name, sec.name as section_name,
               s.id as submission_id, s.status as submission_status, s.score,
               s.teacher_feedback, s.submission_text, s.attachment_urls
        FROM coursework cw
@@ -161,6 +164,21 @@ export class CourseworkService {
   }
 
   async submitCoursework(schoolId: string, studentId: string, dto: any) {
+    const text = dto.submissionText == null ? null : String(dto.submissionText);
+    if (text && text.length > 50_000) throw new BadRequestException('Submission is too long.');
+    const attachments = Array.isArray(dto.attachmentUrls) ? dto.attachmentUrls.slice(0, 10) : [];
+
+    // The student must be enrolled in the section this coursework belongs to.
+    const allowed = await this.db.queryWithTenant(
+      schoolId,
+      `SELECT 1
+       FROM coursework cw
+       JOIN enrollments e ON e.section_id = cw.section_id AND e.student_id = $2
+       WHERE cw.id = $1 AND cw.school_id = $3`,
+      [dto.courseworkId, studentId, schoolId],
+    );
+    if (!allowed.length) throw new ForbiddenException('You are not enrolled in this class.');
+
     const rows = await this.db.queryWithTenant(
       schoolId,
       `INSERT INTO submissions (school_id, coursework_id, student_id, submission_text, attachment_urls, status)
@@ -169,25 +187,30 @@ export class CourseworkService {
        DO UPDATE SET submission_text = EXCLUDED.submission_text,
                      attachment_urls = EXCLUDED.attachment_urls,
                      submitted_at = NOW(), status = 'SUBMITTED'
+       WHERE submissions.status <> 'GRADED'
        RETURNING *`,
-      [
-        schoolId, dto.courseworkId, studentId,
-        dto.submissionText ?? null,
-        JSON.stringify(dto.attachmentUrls ?? []),
-      ],
+      [schoolId, dto.courseworkId, studentId, text, JSON.stringify(attachments)],
     );
+    if (!rows.length) throw new ForbiddenException('This work has already been graded and can no longer be changed.');
     return rows[0];
   }
 
   async gradeSubmission(schoolId: string, submissionId: string, dto: any) {
+    const score = Number(dto.score);
+    if (!Number.isFinite(score) || score < 0) throw new BadRequestException('Invalid score.');
     const rows = await this.db.queryWithTenant(
       schoolId,
-      `UPDATE submissions SET score = $1, teacher_feedback = $2, status = 'GRADED'
-       WHERE id = $3 AND school_id = $4
-       RETURNING *`,
-      [dto.score, dto.teacherFeedback ?? null, submissionId, schoolId],
+      `UPDATE submissions s
+       SET score = $1, teacher_feedback = $2, status = 'GRADED'
+       FROM coursework cw
+       WHERE s.id = $3 AND s.school_id = $4
+         AND cw.id = s.coursework_id AND $1::numeric <= cw.max_score
+       RETURNING s.*`,
+      [score, dto.teacherFeedback ?? null, submissionId, schoolId],
     );
-    if (!rows.length) throw new NotFoundException('Submission not found');
+    if (!rows.length) {
+      throw new NotFoundException('Submission not found, or the score is above the maximum for this coursework.');
+    }
     return rows[0];
   }
 

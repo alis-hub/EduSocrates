@@ -33,7 +33,7 @@ export class HubService {
   private async callAiJson<T = any>(path: string, body: Record<string, any>): Promise<T> {
     const res = await fetch(`${this.aiProxyService.getAiGatewayUrl()}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...this.aiProxyService.getAiGatewayHeaders() },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
@@ -265,7 +265,7 @@ export class HubService {
     const uniqueSlug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
     const invitePrefix = baseSlug.replace(/-/g, '').toUpperCase().slice(0, 6) || 'SCHOOL';
     const generatedInvite =
-      (dto.inviteCode || `${invitePrefix}-${Math.floor(1000 + Math.random() * 9000)}`)
+      (dto.inviteCode || `${invitePrefix}-${crypto.randomBytes(5).toString('hex').toUpperCase()}`)
         .trim()
         .toUpperCase();
 
@@ -495,16 +495,19 @@ export class HubService {
     const sandbox = await this.getTeacherSandbox(token);
     const data = sandbox.sample_assignment_data || {};
 
+    await this.enforceGlobalHubCap();
+    await this.redisService.checkAndIncrementQuota(`sandbox_tok:${sandbox.id}`, 3600_000, 30);
+
     await this.aiProxyService.proxySseEndpoint(
       '/api/v1/ai/hub/sandbox/stream',
       {
         topic: data.assignmentTitle || data.subjectName || 'Teacher Sandbox Demo',
-        message: dto.studentPrompt,
+        message: String(dto.studentPrompt ?? '').slice(0, 2000),
         level: 'HIGH_SCHOOL',
         mode: 'CHECK_MY_LOGIC',
         ai_guidance_mode: data.aiGuidanceMode || 'SOCRATIC_STRICT',
         rubric_or_notes: `${data.assignmentDescription || ''}\nRubric: ${data.rubricOrNotes || ''}`,
-        history: dto.history || [],
+        history: this.sanitizeHistory(dto.history),
         school_id: PUBLIC_HUB_TENANT_ID,
         student_id: `sandbox-${sandbox.id}`,
       },
@@ -514,13 +517,34 @@ export class HubService {
 
   // ─── 4. Public Learning Hub Socratic Sandbox & Code Debugger ──────────────
 
-  private async enforceHubQuota(user: AuthUser | null, anonSessionKey: string | undefined, clientIp: string) {
+  /**
+   * Cost protection for every AI-backed hub call.
+   * Anonymous traffic is keyed by IP only (never by a client-supplied value) and all hub
+   * traffic shares a global daily cap, so a botnet cannot run up the LLM bill.
+   */
+  private async enforceGlobalHubCap() {
+    const globalLimit = Number(process.env.HUB_GLOBAL_DAILY_AI_LIMIT || 3000);
+    await this.redisService.checkAndIncrementQuota(
+      'hub_global_daily', 86_400_000, globalLimit, 'The free learning hub is busy right now. Please try again later.',
+    );
+  }
+
+  private async enforceHubQuota(user: AuthUser | null, _ignoredClientKey: string | undefined, clientIp: string) {
+    await this.enforceGlobalHubCap();
     if (!user) {
-      const key = `hub_anon:${anonSessionKey || clientIp}`;
-      await this.redisService.checkAndIncrementQuota(key, 3600_000, 3);
+      await this.redisService.checkAndIncrementQuota(`hub_anon_ip:${clientIp}`, 3600_000, 3);
     } else {
       await this.redisService.checkAndIncrementQuota(`hub_user:${user.id}`, 3600_000, 80);
     }
+  }
+
+  /** Client chat history is untrusted: only user/assistant turns, bounded count and length. */
+  private sanitizeHistory(history?: Array<{ role: string; content: string }>) {
+    if (!Array.isArray(history)) return [];
+    return history
+      .filter((h) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.content === 'string')
+      .slice(-12)
+      .map((h) => ({ role: h.role, content: h.content.slice(0, 2000) }));
   }
 
   async streamSandbox(
@@ -555,7 +579,7 @@ export class HubService {
         level: dto.level || 'HIGH_SCHOOL',
         mode: dto.mode || 'EXPLANATION',
         ai_guidance_mode: 'SOCRATIC_STRICT',
-        history: dto.history || [],
+        history: this.sanitizeHistory(dto.history),
         school_id: user?.schoolId || PUBLIC_HUB_TENANT_ID,
         student_id: user?.id || `anon-${clientIp}`,
       },
@@ -592,7 +616,7 @@ export class HubService {
         level: dto.level || 'AP_UNDERGRAD',
         mode: 'CODE_DEBUG',
         ai_guidance_mode: 'SOCRATIC_STRICT',
-        history: dto.history || [],
+        history: this.sanitizeHistory(dto.history),
         school_id: user?.schoolId || PUBLIC_HUB_TENANT_ID,
         student_id: user?.id || `anon-${clientIp}`,
       },
@@ -1285,7 +1309,11 @@ export class HubService {
     let targetSchool = dto.isPublic ? PUBLIC_HUB_TENANT_ID : user?.schoolId || PUBLIC_HUB_TENANT_ID;
     if (dto.courseworkId) {
       const cw = await this.db.query(`SELECT school_id FROM coursework WHERE id = $1`, [dto.courseworkId]);
-      if (cw[0]) targetSchool = cw[0].school_id;
+      if (!cw[0]) throw new NotFoundException('Coursework not found');
+      if (cw[0].school_id !== PUBLIC_HUB_TENANT_ID && (!user || user.schoolId !== cw[0].school_id)) {
+        throw new ForbiddenException('You cannot create a room for another school\'s coursework.');
+      }
+      targetSchool = cw[0].school_id;
     }
 
     const res = await this.db.query(
@@ -1328,12 +1356,34 @@ export class HubService {
     return { room };
   }
 
-  async updateWhiteboardState(roomId: string, canvasState: { strokes: any[]; notes: any[] }) {
+  async updateWhiteboardState(
+    roomId: string,
+    canvasState: { strokes: any[]; notes: any[] },
+    user: AuthUser,
+  ) {
+    const serialized = JSON.stringify(canvasState);
+    if (serialized.length > 512 * 1024) {
+      throw new BadRequestException('Whiteboard state is too large.');
+    }
+    const rooms = await this.db.query(
+      `SELECT wr.school_id,
+              EXISTS (SELECT 1 FROM whiteboard_participants wp
+                      WHERE wp.room_id = wr.id AND wp.user_id = $2) AS is_participant
+       FROM whiteboard_rooms wr WHERE wr.id = $1`,
+      [roomId, user.id],
+    );
+    if (!rooms.length) throw new NotFoundException('Whiteboard room not found');
+    const room = rooms[0];
+    if (room.school_id !== PUBLIC_HUB_TENANT_ID && room.school_id !== user.schoolId) {
+      throw new ForbiddenException('This whiteboard room is restricted to enrolled school members.');
+    }
+    if (!room.is_participant) {
+      throw new ForbiddenException('Join the room before editing it.');
+    }
     const res = await this.db.query(
       `UPDATE whiteboard_rooms SET canvas_state = $1::jsonb WHERE id = $2 RETURNING id, canvas_state`,
-      [JSON.stringify(canvasState), roomId],
+      [serialized, roomId],
     );
-    if (res.length === 0) throw new NotFoundException('Whiteboard room not found');
     return res[0];
   }
 

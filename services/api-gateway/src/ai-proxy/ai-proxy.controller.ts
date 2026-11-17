@@ -1,7 +1,7 @@
 import {
-  Controller, Post, Body, Get, Query, Param, Res, UseGuards,
+  Controller, Post, Body, Get, Query, Param, Res, UseGuards, ParseUUIDPipe,
 } from '@nestjs/common';
-import { IsString, IsNotEmpty, IsUUID, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, IsOptional, MaxLength } from 'class-validator';
 import { AiProxyService } from './ai-proxy.service';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
 import { Roles, CurrentUser } from '../auth/decorators';
@@ -12,8 +12,8 @@ class StartSessionDto {
 }
 
 class ChatMessageDto {
-  @IsString() @IsNotEmpty() sessionId: string;
-  @IsString() @IsNotEmpty() message: string;
+  @IsUUID() sessionId: string;
+  @IsString() @IsNotEmpty() @MaxLength(2000) message: string;
   @IsOptional() @IsUUID() subjectId?: string;
 }
 
@@ -36,6 +36,7 @@ export class AiProxyController {
     @Res() res: Response,
   ) {
     const subjectId = dto.subjectId ?? 'unknown';
+    await this.aiProxyService.assertSessionOwner(user.schoolId, user.id, dto.sessionId);
     await this.aiProxyService.checkAndDecrementQuota(user.schoolId, user.id, subjectId);
     return this.aiProxyService.proxyStream(
       dto.sessionId, dto.message, subjectId, user.schoolId, user.id, res,
@@ -62,7 +63,7 @@ export class AiProxyController {
 
   @Get('teacher/ai-sessions/:sessionId/messages')
   @Roles('TEACHER', 'SCHOOL_ADMIN')
-  getSessionMessages(@Param('sessionId') sessionId: string) {
-    return this.aiProxyService.getSessionMessages(sessionId);
+  getSessionMessages(@CurrentUser() user: any, @Param('sessionId', new ParseUUIDPipe()) sessionId: string) {
+    return this.aiProxyService.getSessionMessages(user.schoolId, sessionId);
   }
 }

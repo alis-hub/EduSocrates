@@ -18,6 +18,8 @@ import {
   IsBoolean,
   IsEmail,
   IsArray,
+  ArrayMaxSize,
+  MaxLength,
   IsNumber,
   IsInt,
   IsObject,
@@ -156,9 +158,11 @@ class SimulateTeacherSandboxDto {
 
 class SandboxStreamDto {
   @IsString()
+  @MaxLength(200)
   topic!: string;
 
   @IsString()
+  @MaxLength(2000)
   message!: string;
 
   @IsOptional()
@@ -171,6 +175,7 @@ class SandboxStreamDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(24)
   history?: Array<{ role: string; content: string }>;
 
   @IsOptional()
@@ -180,12 +185,15 @@ class SandboxStreamDto {
 
 class CodeDebugDto {
   @IsString()
+  @MaxLength(50)
   language!: string;
 
   @IsString()
+  @MaxLength(8000)
   code!: string;
 
   @IsString()
+  @MaxLength(2000)
   question!: string;
 
   @IsOptional()
@@ -194,6 +202,7 @@ class CodeDebugDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(24)
   history?: Array<{ role: string; content: string }>;
 
   @IsOptional()
@@ -588,10 +597,14 @@ export class HubController {
     return this.hubService.getWhiteboardRoom(roomId, user);
   }
 
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Put('hub/whiteboard/:roomId')
-  updateWhiteboardState(@Param('roomId') roomId: string, @Body() dto: UpdateWhiteboardDto) {
-    return this.hubService.updateWhiteboardState(roomId, dto.canvasState);
+  updateWhiteboardState(
+    @Param('roomId') roomId: string,
+    @Body() dto: UpdateWhiteboardDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.hubService.updateWhiteboardState(roomId, dto.canvasState, user);
   }
 
   // Gamification
@@ -599,11 +612,5 @@ export class HubController {
   @Get('hub/gamification/profile')
   getGamificationProfile(@CurrentUser() user: AuthUser) {
     return this.hubService.getGamificationProfile(user.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('hub/gamification/record-activity')
-  recordActivity(@Body() dto: RecordActivityDto, @CurrentUser() user: AuthUser) {
-    return this.hubService.recordActivity(user.id, dto.xpDelta ?? 10, dto.badgeCode);
   }
 }

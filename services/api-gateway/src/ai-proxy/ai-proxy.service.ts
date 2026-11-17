@@ -2,6 +2,7 @@ import { Injectable, HttpException, HttpStatus, NotFoundException } from '@nestj
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
+import { aiGatewayHeaders } from '../common/security';
 import type { Response } from 'express';
 import * as http from 'http';
 import * as https from 'https';
@@ -26,6 +27,10 @@ export class AiProxyService {
 
   getAiGatewayUrl(): string {
     return this.aiGatewayUrl;
+  }
+
+  getAiGatewayHeaders(): Record<string, string> {
+    return aiGatewayHeaders(this.config);
   }
 
   async startSession(user: any, courseworkId: string) {
@@ -68,7 +73,7 @@ export class AiProxyService {
     try {
       response = await fetch(`${this.aiGatewayUrl}/api/v1/ai/session/start`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...aiGatewayHeaders(this.config) },
         body: JSON.stringify(payload),
       });
     } catch (err: any) {
@@ -127,6 +132,7 @@ export class AiProxyService {
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(body),
+          ...aiGatewayHeaders(this.config),
         },
       },
       (proxyRes) => {
@@ -141,6 +147,17 @@ export class AiProxyService {
     });
     req.write(body);
     req.end();
+  }
+
+  /** True only if this session was started by this user inside their own tenant. */
+  async assertSessionOwner(schoolId: string, studentId: string, sessionId: string): Promise<void> {
+    const rows = await this.db.queryWithTenant(
+      schoolId,
+      `SELECT 1 FROM ai_tutoring_sessions
+       WHERE id = $1 AND school_id = $2 AND student_id = $3 AND session_status = 'ACTIVE'`,
+      [sessionId, schoolId, studentId],
+    );
+    if (!rows.length) throw new NotFoundException('Session not found');
   }
 
   async proxyStream(
@@ -169,7 +186,11 @@ export class AiProxyService {
         port: url.port || (url.protocol === 'https:' ? 443 : 80),
         path: url.pathname,
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+          ...aiGatewayHeaders(this.config),
+        },
       },
       (proxyRes) => {
         let buffer = '';
@@ -287,37 +308,30 @@ export class AiProxyService {
     return { school_id: schoolId, total_entries: mapped.length, entries: mapped };
   }
 
-  async getSessionMessages(sessionId: string) {
-    try {
-      const response = await fetch(
-        `${this.aiGatewayUrl}/api/v1/ai/sessions/${sessionId}/messages`,
-      );
-      if (response.ok) {
-        const data = (await response.json()) as any;
-        if (data?.messages?.length > 0) return data;
-      }
-    } catch { /* fall through to DB */ }
+  /** Messages of one session, only if it belongs to the caller's own school. */
+  async getSessionMessages(schoolId: string, sessionId: string) {
+    const owned = await this.db.queryWithTenant(
+      schoolId,
+      `SELECT 1 FROM ai_tutoring_sessions WHERE id = $1 AND school_id = $2`,
+      [sessionId, schoolId],
+    );
+    if (!owned.length) throw new NotFoundException('Session not found');
 
-    try {
-      const messages = await this.db.query(
-        `SELECT sender_type, content, created_at
-         FROM ai_tutoring_messages
-         WHERE session_id = $1
-         ORDER BY created_at ASC`,
-        [sessionId],
-      );
-      if (messages && messages.length > 0) {
-        return {
-          session_id: sessionId,
-          messages: messages.map((m: any) => ({
-            role: m.sender_type === 'STUDENT' ? 'user' : 'assistant',
-            content: m.content,
-          })),
-          source: 'database',
-        };
-      }
-    } catch { /* ignore */ }
-
-    return { session_id: sessionId, messages: [], source: 'db_fallback', expired: true };
+    const messages = await this.db.queryWithTenant(
+      schoolId,
+      `SELECT sender_type, content, created_at
+       FROM ai_tutoring_messages
+       WHERE session_id = $1
+       ORDER BY created_at ASC`,
+      [sessionId],
+    );
+    return {
+      session_id: sessionId,
+      messages: messages.map((m: any) => ({
+        role: m.sender_type === 'STUDENT' ? 'user' : 'assistant',
+        content: m.content,
+      })),
+      source: 'database',
+    };
   }
 }
