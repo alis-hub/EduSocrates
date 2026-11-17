@@ -99,7 +99,7 @@ export default function SchoolsPage() {
     setMsg('');
     try {
       await api.hub.submitSchoolLead(leadForm);
-      setMsg('Thank you! Your school inquiry has been sent to our Academic Partnerships team.');
+      setMsg('Thank you! We have received your enquiry. You can also email us any time at sales@gurumera.com.');
       setLeadForm({
         schoolName: '',
         domain: '',
@@ -329,6 +329,9 @@ export default function SchoolsPage() {
               <h2 className="font-extrabold text-lg text-[#1E225B]">
                 Request GuruMera for Your Academy
               </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Prefer email? Write to <a className="underline" href="mailto:sales@gurumera.com">sales@gurumera.com</a>.
+              </p>
               <p className="text-xs text-slate-500 mt-0.5">
                 Submitted inquiries go directly to our Academic Partnerships team for custom SLA &amp; multi-campus onboarding.
               </p>

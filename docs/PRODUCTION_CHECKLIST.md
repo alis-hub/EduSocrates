@@ -32,6 +32,7 @@ Apply in this order. Never re-run `002_v230_public_hub.sql` after 004 (it re-ope
 - Smoke test after deploy: sign in as the new super admin (MFA enrol), create a school via /start/school, a tutor via /start/teacher, join via /join
 
 ## 4. Still open before launch
+- Make sure the mailbox sales@gurumera.com exists and is monitored (pricing page, contact pop-up and schools page all point to it); leads from the schools form appear in the super-admin page
 - Transactional email provider (account recovery and email verification are stubs)
 - HttpOnly cookie sessions (tokens are still in localStorage); needs the hosting layout
 - Remove FERPA/COPPA and other unsupported claims from public pages; real privacy policy and terms (consult a Pakistani lawyer)

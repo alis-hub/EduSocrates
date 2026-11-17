@@ -42,8 +42,8 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
               {activeModal === 'privacy' && 'Privacy Policy'}
               {activeModal === 'terms' && 'Terms of Service & Academic Integrity'}
               {activeModal === 'faq' && 'Frequently Asked Questions (FAQ)'}
-              {activeModal === 'pricing' && 'GuruMera Plans & Pricing Tiers'}
-              {activeModal === 'contact' && 'Contact Support & Institutional Sales'}
+              {activeModal === 'pricing' && 'Plans & Pricing'}
+              {activeModal === 'contact' && 'Contact Us'}
             </h3>
           </div>
           <button
@@ -152,9 +152,9 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Free Tier */}
                 <div className="border border-slate-200 rounded-2xl p-5 bg-white">
-                  <span className="text-xs font-bold text-[#249EA0] uppercase tracking-wider">Independent Learners</span>
-                  <h4 className="text-xl font-black text-[#1E225B] mt-1">Free Forever</h4>
-                  <p className="text-xs text-slate-500 mt-1 mb-4">For students, parents, and self-directed learners everywhere.</p>
+                  <span className="text-xs font-bold text-[#249EA0] uppercase tracking-wider">Individual Students</span>
+                  <h4 className="text-xl font-black text-[#1E225B] mt-1">Free</h4>
+                  <p className="text-xs text-slate-500 mt-1 mb-4">For individual students. Fair-use limits apply to AI tutor messages.</p>
                   <ul className="text-xs space-y-2 text-slate-600">
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Full Public Learning Hub access</li>
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> 2-Tier Socratic Flashcard Generator</li>
@@ -166,83 +166,36 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
 
                 {/* Institutional Tier */}
                 <div className="border-2 border-[#1E225B] rounded-2xl p-5 bg-[#FAF9F5] shadow-xs">
-                  <span className="text-xs font-bold text-[#F5921D] uppercase tracking-wider">Schools &amp; Academies</span>
-                  <h4 className="text-xl font-black text-[#1E225B] mt-1">Campus Enterprise</h4>
-                  <p className="text-xs text-slate-500 mt-1 mb-4">Complete multi-campus digital management and pedagogical safety.</p>
+                  <span className="text-xs font-bold text-[#F5921D] uppercase tracking-wider">Schools, Academies &amp; Tutors</span>
+                  <h4 className="text-xl font-black text-[#1E225B] mt-1">Schools &amp; Teachers</h4>
+                  <p className="text-xs text-slate-500 mt-1 mb-4">Contact sales for pricing: sales@gurumera.com</p>
                   <ul className="text-xs space-y-2 text-slate-600">
-                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Multi-Campus &amp; Class Roster Management</li>
+                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Classes, sections and rosters with class codes</li>
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Coursework-Linked Rubrics &amp; AI Strictness</li>
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Real-Time Teacher AI Audit Logs</li>
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Parent view with result acknowledgement</li>
-                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Dedicated Account Manager &amp; Onboarding</li>
+                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Setup help by email</li>
                   </ul>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Contact Support */}
+          {/* Contact */}
           {activeModal === 'contact' && (
-            <div>
-              {contactSent ? (
-                <div className="text-center py-8 space-y-2 bg-emerald-50 rounded-2xl p-6 border border-emerald-200">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-                  <h4 className="font-bold text-emerald-900 text-base">Message Sent Successfully!</h4>
-                  <p className="text-xs text-emerald-800">
-                    Our educational partnerships team will reply to your inquiry within 1 business day.
-                  </p>
-                </div>
-              ) : (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setContactSent(true);
-                  }}
-                  className="space-y-3"
-                >
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">Your Name *</label>
-                    <input
-                      required
-                      placeholder="Jane Doe"
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">Your Work or School Email *</label>
-                    <input
-                      required
-                      type="email"
-                      placeholder="teacher@school.edu"
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">Subject / Inquiry Type</label>
-                    <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]">
-                      <option>School Onboarding &amp; Academy Deployment</option>
-                      <option>General Support / Question</option>
-                      <option>Academic Integrity &amp; Pedagogy</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">Message *</label>
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder="Tell us about your school, student population, or question..."
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-[#1E225B] hover:bg-[#141740] text-white font-semibold py-2.5 rounded-lg text-xs transition-colors"
-                  >
-                    Submit Inquiry
-                  </button>
-                </form>
-              )}
+            <div className="space-y-3">
+              <p>
+                For school or academy pricing, a demo, or any question, email us and we will reply as soon as we can.
+              </p>
+              <a
+                href="mailto:sales@gurumera.com?subject=GuruMera%20enquiry"
+                className="inline-flex items-center gap-2 bg-[#1E225B] hover:bg-[#141740] text-white font-bold px-5 py-3 rounded-xl text-sm"
+              >
+                <Mail className="w-4 h-4" /> sales@gurumera.com
+              </a>
+              <p className="text-xs text-slate-500">
+                Please include your school or academy name, your city and roughly how many students you teach.
+              </p>
             </div>
           )}
         </div>
