@@ -7,7 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { DatabaseService, PUBLIC_HUB_TENANT_ID } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
-import { isDemoMode, normalizeEmail } from '../common/security';
+import { isDemoMode, isLockedSeedAccount, normalizeEmail } from '../common/security';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp';
 
 export interface JwtPayload {
@@ -125,6 +125,10 @@ export class AuthService {
     // The same email may exist in several schools: match on password, not on row order.
     let matched: any = null;
     for (const u of users) {
+      if (isLockedSeedAccount(u.password_hash, this.config)) {
+        this.logger.warn(`Blocked sign-in to ${u.email}: still uses the published seed password. Run database/production/lock_seed_accounts.sql.`);
+        continue;
+      }
       if (await bcrypt.compare(password, u.password_hash)) { matched = u; break; }
     }
     if (!users.length) await bcrypt.compare(password, DUMMY_HASH); // equalise timing

@@ -15,6 +15,14 @@ export function isProduction(config?: ConfigService): boolean {
   return env === 'production';
 }
 
+/** bcrypt hash of the password published in database/seed.sql ("Password123!"). */
+export const KNOWN_SEED_PASSWORD_HASH = '$2b$10$CnBEPdJSUeirnixKcXHxs.T.Ilc/7mX/iroJzALzTyFrY1nBdeL7a';
+
+/** In production, accounts still carrying the published seed password can never sign in. */
+export function isLockedSeedAccount(passwordHash: string, config?: ConfigService): boolean {
+  return isProduction(config) && passwordHash === KNOWN_SEED_PASSWORD_HASH;
+}
+
 /** Demo accounts, demo tokens and one-click demo logins only work when explicitly enabled, and never in production. */
 export function isDemoMode(config?: ConfigService): boolean {
   const flag = config?.get<string>('ENABLE_DEMO_MODE') ?? process.env.ENABLE_DEMO_MODE;

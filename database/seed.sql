@@ -1,3 +1,7 @@
+-- !!! DEVELOPMENT / DEMO DATA ONLY !!!
+-- Every account below shares the PUBLISHED password "Password123!". Never load this into a
+-- production database. If you already did, run database/production/lock_seed_accounts.sql, then
+-- create your real super admin with services/api-gateway/scripts/create-super-admin.js.
 -- EduSocrates Multi-Tenant Seed Data
 -- Password for seeded accounts is: Password123!
 -- Bcrypt hash for Password123! (10 rounds): $2b$10$CnBEPdJSUeirnixKcXHxs.T.Ilc/7mX/iroJzALzTyFrY1nBdeL7a
