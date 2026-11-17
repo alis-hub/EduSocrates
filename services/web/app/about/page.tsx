@@ -361,7 +361,7 @@ export default function AboutPage() {
               </div>
               <h3 className="font-bold text-[#1E225B] text-base">AI Safety &amp; Engineering</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Engineers specializing in multi-tier LLM guardrails, latency optimization, and defense against adversarial prompt injections.
+                Engineers specializing in multi-layer AI guardrails, latency optimization, and defense against adversarial prompt injections.
               </p>
             </div>
 

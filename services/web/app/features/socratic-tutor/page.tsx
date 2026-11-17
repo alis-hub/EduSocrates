@@ -26,7 +26,7 @@ import {
 export const metadata: Metadata = {
   title: 'Socratic AI Tutor — Guided STEM Learning & Anti-Cheating Mentor | GuruMera',
   description:
-    'Experience GuruMera’s Socratic AI Tutor. An intelligent study mentor powered by Google Gemini that asks diagnostic questions, prevents homework copying, and guides students to self-derived breakthroughs.',
+    'Experience GuruMera’s Socratic AI Tutor. An intelligent study mentor that asks diagnostic questions, prevents homework copying, and guides students to self-derived breakthroughs.',
   keywords: [
     'Socratic AI Tutor',
     'AI homework mentor',

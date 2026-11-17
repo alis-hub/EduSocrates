@@ -180,7 +180,7 @@ export function SocraticTutorInteractiveDemo() {
             <Brain className="w-4 h-4 text-[#249EA0]" />
             <span className="font-bold text-[#1E225B]">{selectedScenario.subject}</span>
           </div>
-          <span className="text-slate-400 text-[11px]">Google Gemini 2.5 Pro Engine</span>
+          <span className="text-slate-400 text-[11px]">Socratic Tutor</span>
         </div>
 
         {/* Message 1: Student Prompt */}
