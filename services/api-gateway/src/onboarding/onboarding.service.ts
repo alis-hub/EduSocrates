@@ -183,6 +183,7 @@ export class OnboardingService {
     });
 
     // Administrators set up an authenticator app before they get a session.
+    void this.auth.sendVerificationEmail(admin);
     const session = await this.auth.completeSignIn(admin);
     return { ...session, school: { id: school.id, name: school.name } };
   }
@@ -225,6 +226,7 @@ export class OnboardingService {
       return { school, teacher, provisioned };
     });
 
+    void this.auth.sendVerificationEmail(out.teacher);
     return {
       ...this.auth.buildAuthResponse(out.teacher),
       school: { id: out.school.id, name: out.school.name },
@@ -285,6 +287,7 @@ export class OnboardingService {
         await client.query(`UPDATE school_invites SET uses_count = uses_count + 1 WHERE id = $1`, [inv.id]);
         return { user, inv };
       });
+      void this.auth.sendVerificationEmail(out.user);
       return {
         ...this.auth.buildAuthResponse(out.user),
         joined: { schoolName: out.inv.school_name, className: out.inv.class_name, sectionName: out.inv.section_name },

@@ -9,6 +9,8 @@ import { DatabaseService, PUBLIC_HUB_TENANT_ID } from '../database/database.serv
 import { RedisService } from '../redis/redis.service';
 import { isDemoMode, isLockedSeedAccount, normalizeEmail } from '../common/security';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp';
+import { EmailService } from '../email/email.service';
+import * as nodeCrypto from 'crypto';
 
 export interface JwtPayload {
   sub: string; // user id
@@ -51,6 +53,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly redis: RedisService,
+    private readonly email: EmailService,
   ) {}
 
   // ─── Token helpers ────────────────────────────────────────────────────────
@@ -233,13 +236,104 @@ export class AuthService {
 
   // ─── Recovery / sessions ──────────────────────────────────────────────────
 
-  /** Always returns the same response (no account enumeration). Email delivery is not wired up yet. */
+  // ─── Email tokens: password reset and address verification ────────────────
+
+  /** Creates a single-use token (only its hash is stored) and cancels any older unused one of the same kind. */
+  private async issueEmailToken(userId: string, purpose: 'VERIFY' | 'RESET', ttlMs: number): Promise<string> {
+    const raw = nodeCrypto.randomBytes(32).toString('hex');
+    const hash = nodeCrypto.createHash('sha256').update(raw).digest('hex');
+    await this.db.query(`UPDATE email_tokens SET used_at = NOW() WHERE user_id = $1 AND purpose = $2 AND used_at IS NULL`, [userId, purpose]);
+    await this.db.query(
+      `INSERT INTO email_tokens (user_id, purpose, token_hash, expires_at) VALUES ($1,$2,$3, NOW() + ($4 || ' milliseconds')::interval)`,
+      [userId, purpose, hash, String(ttlMs)],
+    );
+    return raw;
+  }
+
+  /** Marks the token used and returns its owner, or null if it is unknown, used or expired. */
+  private async consumeEmailToken(raw: string, purpose: 'VERIFY' | 'RESET'): Promise<string | null> {
+    if (!raw || raw.length > 200) return null;
+    const hash = nodeCrypto.createHash('sha256').update(raw).digest('hex');
+    const rows = await this.db.query(
+      `UPDATE email_tokens SET used_at = NOW()
+       WHERE token_hash = $1 AND purpose = $2 AND used_at IS NULL AND expires_at > NOW()
+       RETURNING user_id`,
+      [hash, purpose],
+    );
+    return rows[0]?.user_id ?? null;
+  }
+
+  /** Best-effort: a failure to send must never fail sign-up. */
+  async sendVerificationEmail(user: { id: string; email: string; first_name?: string; email_verified_at?: any }): Promise<void> {
+    try {
+      if (user.email_verified_at) return;
+      const raw = await this.issueEmailToken(user.id, 'VERIFY', 24 * 60 * 60 * 1000);
+      await this.email.send(this.email.verifyEmailMail(user.email, user.first_name || 'there', `${this.email.baseUrl()}/verify-email?token=${raw}`));
+    } catch (err: any) {
+      this.logger.error(`Verification email failed: ${err?.message}`);
+    }
+  }
+
+  async verifyEmail(token: string) {
+    const userId = await this.consumeEmailToken(token, 'VERIFY');
+    if (!userId) throw new BadRequestException('This confirmation link is invalid or has expired. Sign in and request a new one.');
+    await this.db.query(`UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $1`, [userId]);
+    return { success: true, message: 'Your email address is confirmed.' };
+  }
+
+  async resendVerification(userId: string) {
+    const rows = await this.db.query(`SELECT id, email, first_name, email_verified_at FROM users WHERE id = $1 AND is_active = TRUE`, [userId]);
+    if (!rows.length) throw new NotFoundException('Account not found.');
+    if (rows[0].email_verified_at) return { success: true, message: 'Your email is already confirmed.' };
+    await this.redis.checkAndIncrementQuota(`verify-mail:${userId}`, 60 * 60 * 1000, 3, 'Please wait before requesting another email.');
+    await this.sendVerificationEmail(rows[0]);
+    return { success: true, message: 'We sent a new confirmation email.' };
+  }
+
+  /** Always returns the same response (no account enumeration); the work runs in the background so timing is the same too. */
   async requestRecovery(email: string) {
-    this.logger.log(`Password recovery requested (email delivery not configured): ${normalizeEmail(email).replace(/(.).+(@.+)/, '$1***$2')}`);
+    const normalized = normalizeEmail(email);
+    this.sendRecoveryEmail(normalized).catch((err) => this.logger.error(`Recovery email failed: ${err?.message}`));
     return {
       success: true,
-      message: 'If an active account exists for this address, password recovery instructions have been sent.',
+      message: 'If an active account exists for this address, password reset instructions have been sent.',
     };
+  }
+
+  private async sendRecoveryEmail(email: string): Promise<void> {
+    // At most 3 reset emails per address per hour, however many requests arrive.
+    try { await this.redis.checkAndIncrementQuota(`recovery-mail:${email}`, 60 * 60 * 1000, 3); } catch { return; }
+    const users = await this.db.query(
+      `SELECT u.id, u.first_name, u.password_hash, s.name AS school_name
+       FROM users u JOIN schools s ON s.id = u.school_id
+       WHERE LOWER(u.email) = $1 AND u.is_active = TRUE AND u.role <> 'SUPER_ADMIN'
+       ORDER BY u.created_at LIMIT 5`,
+      [email],
+    );
+    const eligible = users.filter((u: any) => !isLockedSeedAccount(u.password_hash, this.config));
+    if (!eligible.length) return;
+    const accounts: { schoolName: string; url: string }[] = [];
+    for (const u of eligible) {
+      const raw = await this.issueEmailToken(u.id, 'RESET', 60 * 60 * 1000);
+      accounts.push({ schoolName: u.school_name, url: `${this.email.baseUrl()}/reset-password?token=${raw}` });
+    }
+    await this.email.send(this.email.resetPasswordMail(email, eligible[0].first_name || 'there', accounts));
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const userId = await this.consumeEmailToken(token, 'RESET');
+    if (!userId) throw new BadRequestException('This reset link is invalid or has expired. Request a new one.');
+    const rows = await this.db.query(`SELECT id, password_hash, is_active, role FROM users WHERE id = $1`, [userId]);
+    const u = rows[0];
+    if (!u || !u.is_active || u.role === 'SUPER_ADMIN' || isLockedSeedAccount(u.password_hash, this.config)) {
+      throw new BadRequestException('This account cannot be reset by email. Contact support.');
+    }
+    const hash = await bcrypt.hash(newPassword, 10);
+    // Having the emailed link also proves the address is theirs.
+    await this.db.query(`UPDATE users SET password_hash = $1, email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $2`, [hash, userId]);
+    // Signs out every device that was using the old password.
+    await this.redis.set(`rv:${userId}`, Date.now(), 60 * 60 * 24 * 30);
+    return { success: true, message: 'Your password has been changed. Please sign in.' };
   }
 
   /** Invalidates every token issued before now and hands back a fresh token for the calling device. */
@@ -286,6 +380,7 @@ export class AuthService {
       if (err?.code === '23505') throw new ConflictException('An account with this email already exists. Please sign in.');
       throw err;
     }
+    void this.sendVerificationEmail(user);
     return this.buildAuthResponse(user);
   }
 
@@ -325,7 +420,11 @@ export class AuthService {
     if (existing.length && !usable) {
       throw new ForbiddenException('Administrator accounts must sign in with email, password and MFA.');
     }
-    if (usable) return { ...this.buildAuthResponse(usable), provider: 'google' };
+    if (usable) {
+      // Google has already verified this address.
+      await this.db.query(`UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $1`, [usable.id]);
+      return { ...this.buildAuthResponse(usable), provider: 'google' };
+    }
 
     // New users are always independent learners. Role/tenant is never inferred from an email address.
     const randomPass = await bcrypt.hash(`sso_${cryptoRandom()}`, 10);
@@ -347,6 +446,7 @@ export class AuthService {
       );
       return ins.rows[0];
     });
+    await this.db.query(`UPDATE users SET email_verified_at = NOW() WHERE id = $1`, [user.id]);
     return { ...this.buildAuthResponse(user), provider: 'google' };
   }
 

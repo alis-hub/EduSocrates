@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { EmailService } from '../email/email.service';
 import { DatabaseService } from '../database/database.service';
 import * as crypto from 'crypto';
 import { generateJoinCode } from '../common/join-code';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService, private readonly email: EmailService) {}
 
   // ── Campuses ─────────────────────────────────────────────────────────────── //
   async getCampuses(schoolId: string) {
@@ -322,11 +323,26 @@ export class AdminService {
       ],
     );
 
+    const emailed = await this.emailParentInvite(schoolId, rows[0], student.first_name, rawToken);
     return {
       ...rows[0],
       rawToken,
       invitationUrl: `/parent/invitation/${rawToken}`,
+      emailed,
     };
+  }
+
+  /** Sends the invitation link to the parent. The admin still gets the link back to share by hand if email fails. */
+  private async emailParentInvite(schoolId: string, inv: any, studentFirstName: string, rawToken: string): Promise<boolean> {
+    try {
+      const [school] = await this.db.queryWithTenant(schoolId, `SELECT name FROM schools WHERE id = $1`, [schoolId]);
+      return await this.email.send(this.email.parentInvitationMail(
+        inv.invited_email, inv.invited_parent_name, school?.name || 'Your school', studentFirstName || 'your child',
+        `${this.email.baseUrl()}/parent/invitation/${rawToken}`,
+      ));
+    } catch {
+      return false;
+    }
   }
 
   async resendParentInvitation(schoolId: string, id: string) {
@@ -343,10 +359,13 @@ export class AdminService {
     );
     if (!rows.length) throw new NotFoundException('Invitation not found.');
 
+    const [st] = await this.db.queryWithTenant(schoolId, `SELECT first_name FROM users WHERE id = $1`, [rows[0].student_id]);
+    const emailed = await this.emailParentInvite(schoolId, rows[0], st?.first_name, rawToken);
     return {
       ...rows[0],
       rawToken,
       invitationUrl: `/parent/invitation/${rawToken}`,
+      emailed,
     };
   }
 

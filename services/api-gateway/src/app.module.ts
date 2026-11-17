@@ -10,11 +10,13 @@ import { RedisModule } from './redis/redis.module';
 import { ParentModule } from './parent/parent.module';
 import { HubModule } from './hub/hub.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     RedisModule,
+    EmailModule,
     DatabaseModule,
     AuthModule,
     AdminModule,

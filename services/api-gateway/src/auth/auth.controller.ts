@@ -34,6 +34,15 @@ export class RequestRecoveryDto {
   @IsEmail() @MaxLength(254) email: string;
 }
 
+export class ResetPasswordDto {
+  @IsString() @IsNotEmpty() @MaxLength(200) token: string;
+  @IsString() @MinLength(8, { message: 'Password must be at least 8 characters long.' }) @MaxLength(72) password: string;
+}
+
+export class VerifyEmailDto {
+  @IsString() @IsNotEmpty() @MaxLength(200) token: string;
+}
+
 export class PublicSignupDto {
   @IsEmail() @MaxLength(254) email: string;
   @IsString() @MinLength(8, { message: 'Password must be at least 8 characters long.' }) @MaxLength(72) password: string;
@@ -79,6 +88,28 @@ export class AuthController {
   @HttpCode(200)
   mfaEnable(@Body() dto: VerifyMfaDto) {
     return this.authService.mfaSetupConfirm(dto.tempToken, dto.code);
+  }
+
+  @Post('reset-password')
+  @RateLimit({ name: 'reset', limit: 10, windowMs: HOUR })
+  @HttpCode(200)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.password);
+  }
+
+  @Post('verify-email')
+  @RateLimit({ name: 'verify', limit: 30, windowMs: HOUR })
+  @HttpCode(200)
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto.token);
+  }
+
+  @Post('resend-verification')
+  @UseGuards(JwtAuthGuard)
+  @RateLimit({ name: 'resend-verify', limit: 10, windowMs: HOUR })
+  @HttpCode(200)
+  resendVerification(@CurrentUser() user: any) {
+    return this.authService.resendVerification(user.id);
   }
 
   @Post('request-recovery')

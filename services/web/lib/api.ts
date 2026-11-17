@@ -91,6 +91,19 @@ export const api = {
     });
   },
 
+  resetPassword: (token: string, password: string) =>
+    apiFetch<{ success: boolean; message: string }>('/auth/reset-password', {
+      method: 'POST', body: JSON.stringify({ token, password }),
+    }),
+
+  verifyEmail: (token: string) =>
+    apiFetch<{ success: boolean; message: string }>('/auth/verify-email', {
+      method: 'POST', body: JSON.stringify({ token }),
+    }),
+
+  resendVerification: () =>
+    apiFetch<{ success: boolean; message: string }>('/auth/resend-verification', { method: 'POST' }),
+
   publicSignup: async (data: {
     email: string;
     password: string;
