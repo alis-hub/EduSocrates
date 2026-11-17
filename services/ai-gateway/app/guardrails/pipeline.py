@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from enum import Enum
 from dataclasses import dataclass
 from typing import List, Tuple
@@ -33,7 +34,9 @@ INJECTION_PATTERNS: List[Tuple[str, str]] = [
     (r"you are now\b.{0,80}(without|no)\s+restriction", "system_override"),
     (r"pretend\s+you\s+(have no|don'?t have)\s+(rule|filter|guideline|safety)", "system_override"),
     # DAN / jailbreak personas
-    (r"\bDAN\b", "jailbreak_persona"),
+    # Case-sensitive on purpose: "Dan has 5 apples" is a normal maths question.
+    (r"(?-i:\bDAN\b)", "jailbreak_persona"),
+    (r"(you are|act as|pretend to be|roleplay as)\s+dan\b", "jailbreak_persona"),
     (r"do anything now", "jailbreak_persona"),
     (r"developer mode", "jailbreak_persona"),
     (r"jailbreak", "jailbreak_persona"),
@@ -42,6 +45,10 @@ INJECTION_PATTERNS: List[Tuple[str, str]] = [
     (r"(just|simply|please|only)?\s*(give|tell|provide|show)\s+me\s+(the\s+)?(correct|right|final)?\s*(answer|solution|result)\b", "direct_answer"),
     (r"what is the answer (to|for) (question|problem|q)?\s*\d+", "direct_answer"),
     (r"solve (question|problem|task|q)\s*\d+\s+for me", "direct_answer"),
+    # Roman Urdu answer fishing
+    (r"(seedha|seedhe)\s+(jawab|jawaab|answer|hal)", "direct_answer"),
+    (r"(jawab|jawaab|answer|hal|solution)\s+(bata|batao|bta|btao|de|do)\s*(do|dein|den|dijiye|dena)?\b", "direct_answer"),
+    (r"(homework|assignment|sawal|sawaal)\s+(kar|hal\s+kar)\s*(do|dein|dena|den)\b", "direct_answer"),
     # Base64 encoded payloads (commonly smuggled instructions)
     (r"base64\s*(decode|encode)", "encoded_payload"),
     (r"[A-Za-z0-9+/]{30,}={0,2}", "long_base64"),
@@ -62,6 +69,14 @@ _INJECTION_COMPILED = [(re.compile(p, re.IGNORECASE), label) for p, label in INJ
 _ANSWER_COMPILED = [(re.compile(p, re.IGNORECASE), label) for p, label in ANSWER_EXTRACTOR_PATTERNS]
 
 
+def normalize_input(text: str) -> str:
+    """Defeat trivial obfuscation before pattern matching: Unicode compatibility forms
+    (full-width letters etc.), zero-width / invisible format characters, odd whitespace."""
+    text = unicodedata.normalize("NFKC", text)
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def layer1_sanitize(text: str) -> GuardrailResult:
     """
     Layer 1: Pre-Sanitization & Pattern Matching.
@@ -71,6 +86,7 @@ def layer1_sanitize(text: str) -> GuardrailResult:
     matched: List[str] = []
     threat = ThreatLevel.SAFE
     intent = IntentCategory.EDUCATIONAL
+    text = normalize_input(text)
 
     for pattern, label in _INJECTION_COMPILED:
         if pattern.search(text):
@@ -111,8 +127,8 @@ EDUCATIONAL_KEYWORDS = [
 ]
 
 EXPLOIT_KEYWORDS = [
-    "answer key", "mark scheme", "model answer", "cheat", "hack",
-    "exam answer", "leak", "bypass", "copy", "plagiarize",
+    "answer key", "mark scheme", "model answer", "cheat on", "cheat in",
+    "exam answers", "leaked exam", "bypass the", "plagiarize",
 ]
 
 

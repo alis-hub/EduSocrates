@@ -1,60 +1,47 @@
 """
-AES-256-CBC encryption utility for EduSocrates chat session data.
-Used to encrypt message_history stored in Redis (FERPA/COPPA compliance).
+AES-256-GCM encryption for GuruMera chat session data stored in Redis.
+
+GCM is authenticated: tampered or wrongly-keyed ciphertext raises an error
+instead of returning garbage. There is NO plaintext fallback — if encryption
+is unavailable the service must fail, not silently store readable data.
 """
-import os
 import base64
+import hashlib
 import json
+import os
 from typing import Any
 
-try:
-    from Crypto.Cipher import AES
-    from Crypto.Util.Padding import pad, unpad
-    HAS_CRYPTO = True
-except ImportError:
-    HAS_CRYPTO = False
+from Crypto.Cipher import AES  # pycryptodome (required dependency)
 
-_KEY_LENGTH = 32  # AES-256
+_VERSION = b"\x02"  # format marker; v1 (CBC / "b64:") data is intentionally unreadable
+_NONCE_LEN = 12
+_TAG_LEN = 16
 
 
 def _get_key(raw_key: str) -> bytes:
-    """Derive a 32-byte key from the config string (zero-pad or truncate)."""
-    key_bytes = raw_key.encode('utf-8')
-    return key_bytes[:_KEY_LENGTH].ljust(_KEY_LENGTH, b'\x00')
+    """Derive a 32-byte key from the configured secret with SHA-256."""
+    if not raw_key:
+        raise ValueError("AES_ENCRYPTION_KEY is not configured")
+    return hashlib.sha256(raw_key.encode("utf-8")).digest()
 
 
 def encrypt_json(data: Any, raw_key: str) -> str:
-    """
-    Serialize `data` to JSON, encrypt with AES-256-CBC.
-    Returns base64(iv + ciphertext) as a string.
-    """
-    plaintext = json.dumps(data, ensure_ascii=False).encode('utf-8')
-    if not HAS_CRYPTO:
-        # Fallback for environments where pycryptodome is not yet installed
-        return "b64:" + base64.b64encode(plaintext).decode('utf-8')
-
-    key = _get_key(raw_key)
-    iv = os.urandom(16)
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
-    return base64.b64encode(iv + ciphertext).decode('utf-8')
+    """Serialize `data` to JSON and encrypt. Returns base64(version | nonce | tag | ciphertext)."""
+    plaintext = json.dumps(data, ensure_ascii=False).encode("utf-8")
+    nonce = os.urandom(_NONCE_LEN)
+    cipher = AES.new(_get_key(raw_key), AES.MODE_GCM, nonce=nonce, mac_len=_TAG_LEN)
+    ciphertext, tag = cipher.encrypt_and_digest(plaintext)
+    return base64.b64encode(_VERSION + nonce + tag + ciphertext).decode("ascii")
 
 
 def decrypt_json(token: str, raw_key: str) -> Any:
-    """
-    Decrypt base64(iv + ciphertext) produced by encrypt_json().
-    Returns the original Python object.
-    """
-    if token.startswith("b64:"):
-        plaintext = base64.b64decode(token[4:].encode('utf-8'))
-        return json.loads(plaintext.decode('utf-8'))
-
-    raw = base64.b64decode(token.encode('utf-8'))
-    if not HAS_CRYPTO:
-        return []
-
-    iv, ciphertext = raw[:16], raw[16:]
-    key = _get_key(raw_key)
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
-    return json.loads(plaintext.decode('utf-8'))
+    """Decrypt a token from encrypt_json(). Raises ValueError if invalid or tampered."""
+    raw = base64.b64decode(token.encode("ascii"))
+    if len(raw) < 1 + _NONCE_LEN + _TAG_LEN or raw[:1] != _VERSION:
+        raise ValueError("Unsupported or corrupt ciphertext")
+    nonce = raw[1:1 + _NONCE_LEN]
+    tag = raw[1 + _NONCE_LEN:1 + _NONCE_LEN + _TAG_LEN]
+    ciphertext = raw[1 + _NONCE_LEN + _TAG_LEN:]
+    cipher = AES.new(_get_key(raw_key), AES.MODE_GCM, nonce=nonce, mac_len=_TAG_LEN)
+    plaintext = cipher.decrypt_and_verify(ciphertext, tag)
+    return json.loads(plaintext.decode("utf-8"))
