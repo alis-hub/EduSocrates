@@ -50,85 +50,6 @@ class SchoolLeadDto {
   roleType!: string;
 }
 
-class OnboardingWizardDto {
-  @IsString()
-  @MinLength(2)
-  schoolName!: string;
-
-  @IsOptional()
-  @IsString()
-  domain?: string;
-
-  @IsEmail()
-  adminEmail!: string;
-
-  @IsString()
-  @MinLength(6)
-  adminPassword!: string;
-
-  @IsString()
-  adminFirstName!: string;
-
-  @IsString()
-  adminLastName!: string;
-
-  @IsString()
-  campusName!: string;
-
-  @IsString()
-  campusCity!: string;
-
-  @IsString()
-  className!: string;
-
-  @IsOptional()
-  @IsString()
-  academicYear?: string;
-
-  @IsOptional()
-  @IsString()
-  sectionName?: string;
-
-  @IsString()
-  subjectName!: string;
-
-  @IsOptional()
-  @IsString()
-  inviteCode?: string;
-
-  @IsOptional()
-  @IsString()
-  secondaryCampusName?: string;
-
-  @IsOptional()
-  @IsString()
-  secondaryCampusCity?: string;
-
-  @IsOptional()
-  @IsString()
-  brandingColor?: string;
-
-  @IsOptional()
-  @IsString()
-  subdomain?: string;
-
-  @IsOptional()
-  @IsString()
-  aiGuidanceMode?: string;
-
-  @IsOptional()
-  @IsString()
-  retentionPolicy?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  ssoGoogle?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  ssoMicrosoft?: boolean;
-}
-
 class UpdateTeacherSandboxDto {
   @IsOptional()
   @IsString()
@@ -414,11 +335,6 @@ export class HubController {
   @Post('leads/school-inquiry')
   createSchoolLead(@Body() dto: SchoolLeadDto) {
     return this.hubService.createSchoolLead(dto);
-  }
-
-  @Post('onboarding/wizard')
-  onboardingWizard(@Body() dto: OnboardingWizardDto) {
-    return this.hubService.onboardingWizard(dto);
   }
 
   // 2-Hour Ephemeral Teacher Sandbox

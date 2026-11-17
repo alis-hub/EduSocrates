@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import * as crypto from 'crypto';
+import { generateJoinCode } from '../common/join-code';
 
 @Injectable()
 export class AdminService {
@@ -381,8 +382,11 @@ export class AdminService {
     createdBy: string,
     dto: { campusId?: string; sectionId?: string; targetRole?: string; maxUses?: number; customCode?: string },
   ) {
-    const suffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const code = (dto.customCode?.trim().toUpperCase() || `EDU-${suffix}`);
+    const custom = dto.customCode?.trim().toUpperCase();
+    if (custom && custom.replace(/[^A-Z0-9]/g, '').length < 8) {
+      throw new BadRequestException('A custom class code needs at least 8 letters or digits, or leave it empty for a random one.');
+    }
+    const code = custom || generateJoinCode();
     const rows = await this.db.queryWithTenant(
       schoolId,
       `INSERT INTO school_invites (school_id, campus_id, section_id, invite_code, target_role, created_by, max_uses)

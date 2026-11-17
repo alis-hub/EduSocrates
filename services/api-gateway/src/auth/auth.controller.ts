@@ -1,7 +1,7 @@
 import { Controller, Post, Body, HttpCode, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
-  IsEmail, IsString, MinLength, MaxLength, IsIn, IsOptional, IsNotEmpty, Length,
+  IsEmail, IsString, MinLength, MaxLength, IsIn, IsOptional, IsNotEmpty, Length, IsUUID,
 } from 'class-validator';
 import { JwtAuthGuard } from './guards';
 import { CurrentUser } from './decorators';
@@ -16,6 +16,9 @@ export class LoginDto {
   password: string;
 
   @IsOptional() @IsString() @Length(6, 6) mfaCode?: string;
+
+  /** Only needed when the same email belongs to several schools/academies. */
+  @IsOptional() @IsUUID() schoolId?: string;
 }
 
 export class VerifyMfaDto {
@@ -38,10 +41,6 @@ export class PublicSignupDto {
   @IsOptional() @IsString() @MaxLength(100) lastName?: string;
 }
 
-export class RedeemInviteDto {
-  @IsString() @IsNotEmpty() @MaxLength(64) inviteCode: string;
-}
-
 export class SsoLoginDto {
   @IsIn(['google']) provider: 'google';
   @IsString() @IsNotEmpty() @MaxLength(4096) idToken: string;
@@ -56,7 +55,7 @@ export class AuthController {
   @RateLimit({ name: 'login', limit: 30, windowMs: 15 * 60 * 1000 })
   @HttpCode(200)
   login(@Body() dto: LoginDto) {
-    return this.authService.login(dto.email, dto.password, dto.mfaCode);
+    return this.authService.login(dto.email, dto.password, dto.mfaCode, dto.schoolId);
   }
 
   /** Second step for administrators who already enrolled an authenticator app. */
@@ -103,13 +102,6 @@ export class AuthController {
   @HttpCode(201)
   publicSignup(@Body() dto: PublicSignupDto) {
     return this.authService.publicSignup(dto);
-  }
-
-  @Post('redeem-invite')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(200)
-  redeemInvite(@CurrentUser() user: any, @Body() dto: RedeemInviteDto) {
-    return this.authService.redeemInvite(user.id, dto.inviteCode);
   }
 
   /** Demo-only no-op. Returns 404 unless ENABLE_DEMO_MODE=true (never in production). */

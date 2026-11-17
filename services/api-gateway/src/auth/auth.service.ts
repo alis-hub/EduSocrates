@@ -108,7 +108,7 @@ export class AuthService {
 
   // ─── Login + MFA ──────────────────────────────────────────────────────────
 
-  async login(email: string, password: string, mfaCode?: string): Promise<any> {
+  async login(email: string, password: string, mfaCode?: string, schoolId?: string): Promise<any> {
     const normalized = normalizeEmail(email);
     await this.redis.checkAndIncrementQuota(
       `login:${normalized}`, FIFTEEN_MIN, 20,
@@ -116,24 +116,47 @@ export class AuthService {
     );
 
     const users = await this.db.query(
-      `SELECT u.* FROM users u JOIN schools s ON s.id = u.school_id
+      `SELECT u.*, s.name AS school_name, s.tenant_type FROM users u JOIN schools s ON s.id = u.school_id
        WHERE LOWER(u.email) = $1 AND u.is_active = TRUE AND s.subscription_status <> 'SUSPENDED'
        ORDER BY u.created_at ASC LIMIT 10`,
       [normalized],
     );
 
-    // The same email may exist in several schools: match on password, not on row order.
-    let matched: any = null;
+    // The same email may exist in several schools: find every account this password opens.
+    const matches: any[] = [];
     for (const u of users) {
       if (isLockedSeedAccount(u.password_hash, this.config)) {
         this.logger.warn(`Blocked sign-in to ${u.email}: still uses the published seed password. Run database/production/lock_seed_accounts.sql.`);
         continue;
       }
-      if (await bcrypt.compare(password, u.password_hash)) { matched = u; break; }
+      if (await bcrypt.compare(password, u.password_hash)) matches.push(u);
     }
     if (!users.length) await bcrypt.compare(password, DUMMY_HASH); // equalise timing
-    if (!matched) throw new UnauthorizedException('Invalid credentials');
+    if (!matches.length) throw new UnauthorizedException('Invalid credentials');
 
+    let matched = matches[0];
+    if (matches.length > 1) {
+      const chosen = schoolId ? matches.find((m) => m.school_id === schoolId) : undefined;
+      if (!chosen) {
+        // Password proven, but the person belongs to several schools/academies: let them choose.
+        return {
+          requiresAccountChoice: true,
+          accounts: matches.map((m) => ({
+            schoolId: m.school_id,
+            schoolName: m.school_name,
+            role: m.role,
+            tenantType: m.tenant_type,
+          })),
+          message: 'You have more than one account with this email. Choose where to sign in.',
+        };
+      }
+      matched = chosen;
+    }
+    return this.completeSignIn(matched, mfaCode);
+  }
+
+  /** Password already verified: apply the administrator second-factor rules and issue the session. */
+  public async completeSignIn(matched: any, mfaCode?: string): Promise<any> {
     if (!ADMIN_ROLES.has(matched.role)) return this.buildAuthResponse(matched);
 
     // Administrators need a real second factor (TOTP).
@@ -267,62 +290,6 @@ export class AuthService {
   }
 
   // ─── Joining a school with an invite code ─────────────────────────────────
-
-  async redeemInvite(userId: string, inviteCode: string) {
-    const code = String(inviteCode ?? '').trim().toUpperCase();
-    await this.redis.checkAndIncrementQuota(
-      `invite:${userId}`, 60 * 60 * 1000, 10, 'Too many invite-code attempts. Try again later.',
-    );
-    let result: { updatedUser: any; schoolName: string };
-    try {
-      result = await this.db.withTransaction(async (client) => {
-        const userRes = await client.query(`SELECT * FROM users WHERE id = $1 FOR UPDATE`, [userId]);
-        if (!userRes.rows.length) throw new NotFoundException('User account not found.');
-        if (userRes.rows[0].role !== 'INDEPENDENT_STUDENT') {
-          throw new ForbiddenException('Only independent learner accounts can redeem an enrolment code.');
-        }
-
-        const inviteRes = await client.query(
-          `SELECT si.*, s.name AS school_name, s.subscription_status
-           FROM school_invites si JOIN schools s ON s.id = si.school_id
-           WHERE UPPER(si.invite_code) = $1 FOR UPDATE OF si`,
-          [code],
-        );
-        if (!inviteRes.rows.length) throw new NotFoundException('Invalid enrolment code.');
-        const invite = inviteRes.rows[0];
-        if (new Date(invite.expires_at) < new Date()) throw new BadRequestException('This invite code has expired.');
-        if (invite.uses_count >= invite.max_uses) throw new BadRequestException('This invite code has reached its usage limit.');
-        if (invite.subscription_status === 'SUSPENDED') throw new BadRequestException('The target school is currently suspended.');
-
-        const role = ['STUDENT', 'TEACHER'].includes(invite.target_role) ? invite.target_role : 'STUDENT';
-        await client.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [invite.school_id]);
-
-        const updated = await client.query(
-          `UPDATE users SET school_id = $1, campus_id = $2, role = $3 WHERE id = $4 RETURNING *`,
-          [invite.school_id, invite.campus_id, role, userId],
-        );
-        if (invite.section_id && role === 'STUDENT') {
-          const ay = await client.query(
-            `SELECT id FROM academic_years WHERE school_id = $1 AND is_active = TRUE ORDER BY start_date DESC LIMIT 1`,
-            [invite.school_id],
-          );
-          if (ay.rows.length) {
-            await client.query(
-              `INSERT INTO enrollments (school_id, student_id, section_id, academic_year_id)
-               VALUES ($1, $2, $3, $4) ON CONFLICT (student_id, section_id, academic_year_id) DO NOTHING`,
-              [invite.school_id, userId, invite.section_id, ay.rows[0].id],
-            );
-          }
-        }
-        await client.query(`UPDATE school_invites SET uses_count = uses_count + 1 WHERE id = $1`, [invite.id]);
-        return { updatedUser: updated.rows[0], schoolName: invite.school_name };
-      });
-    } catch (err: any) {
-      if (err?.code === '23505') throw new ConflictException('An account with this email already exists in that school.');
-      throw err;
-    }
-    return { ...this.buildAuthResponse(result.updatedUser), schoolName: result.schoolName, migrated: true };
-  }
 
   // ─── Single sign-on (Google ID token, verified server-side) ───────────────
 

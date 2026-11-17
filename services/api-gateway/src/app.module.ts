@@ -9,6 +9,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
 import { RedisModule } from './redis/redis.module';
 import { ParentModule } from './parent/parent.module';
 import { HubModule } from './hub/hub.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { HubModule } from './hub/hub.module';
     SuperAdminModule,
     ParentModule,
     HubModule,
+    OnboardingModule,
   ],
 })
 export class AppModule {}
