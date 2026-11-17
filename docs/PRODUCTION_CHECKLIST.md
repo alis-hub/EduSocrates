@@ -23,7 +23,8 @@ Apply in this order. Never re-run `002_v230_public_hub.sql` after 004 (it re-ope
 - `JWT_SECRET` (32+ random chars), `AI_GATEWAY_API_KEY`, `AES_ENCRYPTION_KEY`
 - `GOOGLE_CLIENT_ID` (API) and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (web)
 - `CORS_ORIGINS` = your exact web origins; `TRUST_PROXY` set to match your host
-- `HUB_GLOBAL_DAILY_AI_LIMIT`
+- `HUB_GLOBAL_DAILY_AI_LIMIT`, `STUDENT_HOURLY_AI_LIMIT` (40), `SCHOOL_DAILY_AI_LIMIT` (6000), `TUTOR_DAILY_AI_LIMIT` (1500): AI cost caps; tune once pricing and the real LLM provider are known
+- Teachers' `[[answer: ...]]` tags: tell teachers to use them so answers are enforced; the model itself never receives them
 - The AI gateway must not be reachable from the internet; only the API gateway calls it.
 
 ## 3. Deploy

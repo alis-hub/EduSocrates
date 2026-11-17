@@ -49,6 +49,16 @@ INJECTION_PATTERNS: List[Tuple[str, str]] = [
     (r"(seedha|seedhe)\s+(jawab|jawaab|answer|hal)", "direct_answer"),
     (r"(jawab|jawaab|answer|hal|solution)\s+(bata|batao|bta|btao|de|do)\s*(do|dein|den|dijiye|dena)?\b", "direct_answer"),
     (r"(homework|assignment|sawal|sawaal)\s+(kar|hal\s+kar)\s*(do|dein|dena|den)\b", "direct_answer"),
+    # Roman Urdu overrides / prompt exposure
+    (r"(pichl[ei]|purani|sab|saari|sari|tamam)\s+(hidayat|hidayaat|instructions?|rules?|ehkam|ahkam)\s+(ko\s+)?(bhool|bhul|nazar\s*andaz|ignore)", "system_override"),
+    (r"(rules?|instructions?|hidayat|hidayaat)\s+(ko\s+)?(bhool|bhul|nazar\s*andaz)\s*(jao|karo|kar\s*do|do)", "system_override"),
+    (r"(apni|system)\s+(instructions?|hidayat|hidayaat|prompt)\s+(batao|bata\s*do|dikhao|dikha\s*do|show)", "prompt_exposure"),
+    # Urdu script: answer fishing, overrides, prompt exposure
+    (r"(سیدھا|سیدھے)\s*(جواب|حل)", "direct_answer"),
+    (r"(جواب|حل)\s*(بتا|بتاؤ|بتاو|بتائیں|بتایئے|دو|دیں|دے\s*دو|بتا\s*دو)", "direct_answer"),
+    (r"(ہوم\s*ورک|اسائنمنٹ|سوال)\s*(حل\s*)?(کر)\s*(دو|دیں|دے)", "direct_answer"),
+    (r"(پچھلی|پچھلے|تمام|سب|ساری)\s*(ہدایات|احکامات|اصول|قواعد)\s*(کو\s*)?(بھول|نظر\s*انداز|چھوڑ)", "system_override"),
+    (r"(اپنی|سسٹم)\s*(ہدایات|پرامپٹ|پرومپٹ)\s*(بتاؤ|بتاو|دکھاؤ|دکھاو|ظاہر)", "prompt_exposure"),
     # Base64 encoded payloads (commonly smuggled instructions)
     (r"base64\s*(decode|encode)", "encoded_payload"),
     (r"[A-Za-z0-9+/]{30,}={0,2}", "long_base64"),
@@ -69,10 +79,18 @@ _INJECTION_COMPILED = [(re.compile(p, re.IGNORECASE), label) for p, label in INJ
 _ANSWER_COMPILED = [(re.compile(p, re.IGNORECASE), label) for p, label in ANSWER_EXTRACTOR_PATTERNS]
 
 
+# Arabic-Indic (٠-٩) and Extended Arabic-Indic / Urdu (۰-۹) digits -> ASCII, so "۴۲" matches an answer of "42".
+_DIGIT_MAP = {**{0x0660 + i: 0x30 + i for i in range(10)}, **{0x06F0 + i: 0x30 + i for i in range(10)}}
+
+
+def ascii_digits(text: str) -> str:
+    return text.translate(_DIGIT_MAP)
+
+
 def normalize_input(text: str) -> str:
     """Defeat trivial obfuscation before pattern matching: Unicode compatibility forms
     (full-width letters etc.), zero-width / invisible format characters, odd whitespace."""
-    text = unicodedata.normalize("NFKC", text)
+    text = ascii_digits(unicodedata.normalize("NFKC", text))
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
     return re.sub(r"\s+", " ", text).strip()
 
@@ -174,7 +192,7 @@ _FORMAT_NOISE = re.compile(r"[\s,_*`'\"\u00a0]+")
 
 def _squash(text: str) -> str:
     """Lowercase, NFKC and drop spacing/markdown noise so '3 / 5', '3/5' and '**3/5**' all match."""
-    return _FORMAT_NOISE.sub("", unicodedata.normalize("NFKC", text).lower())
+    return _FORMAT_NOISE.sub("", ascii_digits(unicodedata.normalize("NFKC", text)).lower())
 
 
 def _term_in_text(term: str, text: str, squashed_text: str) -> bool:

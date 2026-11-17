@@ -10,6 +10,12 @@ import * as https from 'https';
 
 const QUOTA_LIMIT = 15;
 const QUOTA_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function envInt(v: string | undefined, fallback: number): number {
+  const n = Number.parseInt(v ?? '', 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
 
 @Injectable()
 export class AiProxyService {
@@ -108,9 +114,35 @@ export class AiProxyService {
     return { ...data, subjectId: cw.subject_id };
   }
 
+  /**
+   * Cost control. Three layers, all enforced before the AI is called:
+   *  1. per student, per hour, across ALL subjects (the subjectId in the request is client-supplied,
+   *     so a per-subject counter alone can be dodged by sending a different value each time);
+   *  2. per student, per subject, per hour (pacing);
+   *  3. per school/academy, per day (a runaway or abusive tenant cannot drain the shared AI budget).
+   */
   async checkAndDecrementQuota(schoolId: string, studentId: string, subjectId: string) {
-    const key = `quota:${schoolId}:${studentId}:${subjectId}`;
-    await this.redisService.checkAndIncrementQuota(key, QUOTA_WINDOW_MS, QUOTA_LIMIT);
+    const perStudentHour = envInt(this.config.get('STUDENT_HOURLY_AI_LIMIT'), 40);
+    await this.redisService.checkAndIncrementQuota(
+      `quota:stu-h:${schoolId}:${studentId}`, QUOTA_WINDOW_MS, perStudentHour,
+      'You have reached the hourly limit for AI help. Take a short break and try again.',
+    );
+    await this.redisService.checkAndIncrementQuota(
+      `quota:${schoolId}:${studentId}:${String(subjectId).slice(0, 64)}`, QUOTA_WINDOW_MS, QUOTA_LIMIT,
+    );
+
+    const t = await this.db.queryWithTenant(schoolId, `SELECT tenant_type FROM schools WHERE id = $1`, [schoolId]);
+    const type = t[0]?.tenant_type;
+    const dayLimit =
+      type === 'TUTOR' ? envInt(this.config.get('TUTOR_DAILY_AI_LIMIT'), 1500)
+      : type === 'HUB' ? Number.MAX_SAFE_INTEGER // the Hub has its own global cap
+      : envInt(this.config.get('SCHOOL_DAILY_AI_LIMIT'), 6000);
+    if (dayLimit !== Number.MAX_SAFE_INTEGER) {
+      await this.redisService.checkAndIncrementQuota(
+        `quota:tenant-d:${schoolId}`, DAY_MS, dayLimit,
+        'Your school has reached its daily AI limit. It resets tomorrow; please contact your teacher.',
+      );
+    }
   }
 
   /** Generic SSE proxy helper for stateless AI Gateway streaming endpoints (Public Hub & Sandbox). */

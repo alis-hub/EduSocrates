@@ -16,7 +16,8 @@ from app.guardrails.pipeline import (
 )
 from app.pii.redactor import redact_pii
 from app.prompts.socratic_prompt import (
-    build_system_prompt, build_student_turn_message, get_answer_key_terms, SAFE_FALLBACK_RESPONSE
+    build_system_prompt, build_student_turn_message, get_answer_key_terms, SAFE_FALLBACK_RESPONSE,
+    student_message_matches_answer
 )
 from app.services.llm_provider import stream_llm_response, generate_llm_text
 from app.services import redis_client
@@ -210,6 +211,7 @@ async def chat_stream(request: ChatStreamRequest, background_tasks: BackgroundTa
         return StreamingResponse(blocked_stream(), media_type="text/event-stream")
 
     session["turn_count"] += 1
+    matches_answer = student_message_matches_answer(sanitized_message, session.get("answer_key_terms") or [])
     if (
         session.get("ai_guidance_mode") == "SOCRATIC_HINTS_ONLY"
         and session.get("hint_count", 0) >= 2
@@ -218,9 +220,10 @@ async def chat_stream(request: ChatStreamRequest, background_tasks: BackgroundTa
             sanitized_message
             + " [INSTRUCTOR CONSTRAINT: hint limit reached this cycle — redirect with a question, do not provide another hint]",
             session["turn_count"],
+            matches_answer,
         )
     else:
-        wrapped_message = build_student_turn_message(sanitized_message, session["turn_count"])
+        wrapped_message = build_student_turn_message(sanitized_message, session["turn_count"], matches_answer)
 
     message_history = session["message_history"] + [{"role": "user", "content": wrapped_message}]
     answer_key_terms = session["answer_key_terms"]
