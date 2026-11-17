@@ -18,18 +18,13 @@ export function getWsBaseUrl(): string {
   return API_BASE;
 }
 
-export function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('edusocrates_token');
-}
-
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+  // The session lives in an HttpOnly cookie that the browser attaches; scripts never hold the token.
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
   });
@@ -40,24 +35,10 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   return res.json();
 }
 
-/** Set auth cookie readable by Next.js middleware (edge runtime). */
-function setAuthCookie(token: string) {
-  if (typeof document === 'undefined') return;
-  const maxAge = 60 * 60 * 24; // 1 day in seconds
-  document.cookie = `edusocrates_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
-}
-
-/** Clear the auth cookie. */
-function clearAuthCookie() {
-  if (typeof document === 'undefined') return;
-  document.cookie = 'edusocrates_token=; path=/; max-age=0; SameSite=Lax';
-}
-
-export function setStoredAuth(accessToken: string, user: any) {
+/** Remember who is signed in (name, role) for display. This is not a credential. */
+export function setStoredAuth(_accessToken: string | undefined, user: any) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('edusocrates_token', accessToken);
   localStorage.setItem('edusocrates_user', JSON.stringify(user));
-  setAuthCookie(accessToken);
 }
 
 export const api = {
@@ -67,7 +48,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email, password, ...(mfaCode ? { mfaCode } : {}), ...(schoolId ? { schoolId } : {}) }),
     });
-    if (res.accessToken) {
+    if (res.user) {
       setStoredAuth(res.accessToken, res.user);
     }
     return res;
@@ -78,7 +59,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ tempToken, code }),
     });
-    if (res.accessToken) {
+    if (res.user) {
       setStoredAuth(res.accessToken, res.user);
     }
     return res;
@@ -141,7 +122,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ tempToken, code }),
     });
-    if (res.accessToken) setStoredAuth(res.accessToken, res.user);
+    if (res.user) setStoredAuth(res.accessToken, res.user);
     return res;
   },
 
@@ -157,7 +138,7 @@ export const api = {
       { method: 'POST' },
     );
     // The server signs out every other device and gives this one a fresh token.
-    if (res.accessToken && res.user) setStoredAuth(res.accessToken, res.user);
+    if (res.user) setStoredAuth(res.accessToken, res.user);
     return res;
   },
 
@@ -175,14 +156,14 @@ export const api = {
     sectionName?: string; campusName?: string; city?: string;
   }) => {
     const res = await apiFetch<any>('/onboarding/tutor', { method: 'POST', body: JSON.stringify(data) });
-    if (res.accessToken) setStoredAuth(res.accessToken, res.user);
+    if (res.user) setStoredAuth(res.accessToken, res.user);
     return res;
   },
 
   /** A new student creates an account in the class's school using a class code. */
   joinClass: async (data: { code: string; firstName: string; lastName: string; email: string; password: string }) => {
     const res = await apiFetch<any>('/join/class', { method: 'POST', body: JSON.stringify(data) });
-    if (res.accessToken) setStoredAuth(res.accessToken, res.user);
+    if (res.user) setStoredAuth(res.accessToken, res.user);
     return res;
   },
 
@@ -548,9 +529,10 @@ export function getStoredUser() {
   return raw ? JSON.parse(raw) : null;
 }
 
-export function logout() {
-  localStorage.removeItem('edusocrates_token');
+export async function logout() {
   localStorage.removeItem('edusocrates_user');
-  clearAuthCookie();
+  try {
+    await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+  } catch { /* the cookie also expires on its own */ }
   window.location.href = '/login';
 }

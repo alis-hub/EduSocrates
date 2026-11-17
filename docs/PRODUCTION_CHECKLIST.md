@@ -1,5 +1,7 @@
 # GuruMera production cut-over checklist
 
+> The step-by-step runbook is **docs/PRODUCTION_CUTOVER.md** (Neon + Render + Vercel + Brevo). This file is the running list of what each sprint added.
+
 Nothing in this list has been applied to production. It is the single place that collects every step to run
 once all sprints are finished. Update it as each sprint lands.
 
@@ -21,6 +23,7 @@ Apply in this order. Never re-run `002_v230_public_hub.sql` after 004 (it re-ope
 ## 2. Environment variables (API gateway, AI gateway, web)
 - `NODE_ENV=production`; `ENABLE_DEMO_MODE` unset/false; `NEXT_PUBLIC_ENABLE_DEMO` unset
 - `DATABASE_URL` (owner) and `DATABASE_APP_URL` (role `gurumera_app`); use the Neon direct host if the pooler rejects session settings
+- `COOKIE_DOMAIN` (.gurumera.com)
 - `JWT_SECRET` (32+ random chars), `AI_GATEWAY_API_KEY`, `AES_ENCRYPTION_KEY`
 - `GOOGLE_CLIENT_ID` (API) and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (web)
 - `CORS_ORIGINS` = your exact web origins; `TRUST_PROXY` set to match your host
@@ -37,6 +40,6 @@ Apply in this order. Never re-run `002_v230_public_hub.sql` after 004 (it re-ope
 - Make sure the mailbox sales@gurumera.com exists and is monitored (pricing page, contact pop-up and schools page all point to it); leads from the schools form appear in the super-admin page
 - Brevo setup: verify the gurumera.com sending domain (SPF, DKIM, DMARC DNS records) and send yourself a test reset email before launch; unauthenticated domains land in spam
 - Emails are sent but sign-in is not blocked for unverified addresses (by design for now)
-- HttpOnly cookie sessions (tokens are still in localStorage); needs the hosting layout
+- Sessions are now HttpOnly cookies: web and API must share the parent domain (gurumera.com and api.gurumera.com); set COOKIE_DOMAIN=.gurumera.com on the API
 - Remove FERPA/COPPA and other unsupported claims from public pages; real privacy policy and terms (consult a Pakistani lawyer)
 - Remaining sprints: coursework, teacher audit, parent view + acknowledgement, tutor-engine hardening, pricing

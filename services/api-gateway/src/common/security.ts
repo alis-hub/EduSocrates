@@ -69,3 +69,40 @@ export function getCorsOrigins(config: ConfigService): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
 }
+
+// ─── Browser sessions: HttpOnly cookie ──────────────────────────────────────
+
+/** Name of the HttpOnly cookie that carries the access token for browsers. */
+export const SESSION_COOKIE = 'gm_session';
+
+export function readCookie(header: string | undefined, name: string): string | null {
+  if (!header) return null;
+  for (const part of header.split(';')) {
+    const i = part.indexOf('=');
+    if (i > 0 && part.slice(0, i).trim() === name) {
+      try { return decodeURIComponent(part.slice(i + 1).trim()); } catch { return null; }
+    }
+  }
+  return null;
+}
+
+/**
+ * Cookie settings. In production the web app and API live on sibling subdomains
+ * (gurumera.com and api.gurumera.com), so set COOKIE_DOMAIN=.gurumera.com: the cookie is then
+ * sent to both, is "same-site" (SameSite=Lax works), and is never readable by page scripts.
+ */
+export function sessionCookieOptions(config: ConfigService, maxAgeMs: number) {
+  const domain = config.get<string>('COOKIE_DOMAIN') || undefined;
+  return {
+    httpOnly: true,
+    secure: isProduction(config),
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: maxAgeMs,
+    ...(domain ? { domain } : {}),
+  };
+}
+
+export function isAllowedOrigin(config: ConfigService, origin: string | undefined): boolean {
+  return !!origin && getCorsOrigins(config).includes(origin);
+}

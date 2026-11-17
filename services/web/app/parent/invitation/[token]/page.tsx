@@ -116,8 +116,8 @@ export default function AcceptParentInvitationPage() {
         lastName: lastName.trim() || undefined,
       });
 
-      if (authRes?.accessToken && authRes?.user) {
-        setStoredAuth(authRes.accessToken, authRes.user);
+      if (authRes?.user) {
+        setStoredAuth(undefined, authRes.user);
         router.push('/parent');
       } else {
         router.push('/login');

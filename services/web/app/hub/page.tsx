@@ -5,7 +5,6 @@ import {
   api,
   getApiBaseUrl,
   getStoredUser,
-  getToken,
   logout,
 } from '@/lib/api';
 import { GoogleSignInButton, googleSignInEnabled } from '@/components/GoogleSignInButton';
@@ -251,12 +250,11 @@ export default function PublicLearningHubPage() {
     payload: Record<string, any>,
     onToken: (tok: string) => void,
   ): Promise<boolean> {
-    const token = getToken();
     const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(payload),
     });

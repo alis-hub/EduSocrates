@@ -3,6 +3,7 @@ import type { IncomingMessage } from 'http';
 import type { Socket } from 'net';
 import type { DatabaseService } from '../database/database.service';
 import { PUBLIC_HUB_TENANT_ID } from '../database/database.service';
+import { readCookie, SESSION_COOKIE } from '../common/security';
 
 const MAX_FRAME_BYTES = 256 * 1024;
 const MAX_BUFFER_BYTES = 512 * 1024;
@@ -206,7 +207,8 @@ export function attachWhiteboardWs(httpServer: any, db: DatabaseService, auth: W
       return;
     }
     let authedUserId: string | undefined;
-    const token = params.get('token');
+    // Browsers authenticate the handshake with the HttpOnly session cookie; ?token= still works for other clients.
+    const token = params.get('token') || readCookie(req.headers.cookie, SESSION_COOKIE);
     if (token) {
       const payload = await auth.verifyToken(token);
       if (payload) authedUserId = payload.sub;

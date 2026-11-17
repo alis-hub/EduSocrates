@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from './auth.service';
-import { getJwtSecret } from '../common/security';
+import { getJwtSecret, readCookie, SESSION_COOKIE } from '../common/security';
 import { RedisService } from '../redis/redis.service';
 
 @Injectable()
@@ -13,7 +13,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly redis: RedisService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      // Browsers authenticate with the HttpOnly cookie; API clients may still send a Bearer header.
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (req: any) => readCookie(req?.headers?.cookie, SESSION_COOKIE),
+      ]),
       ignoreExpiration: false,
       secretOrKey: getJwtSecret(config), // no fallback: fails fast at startup
       algorithms: ['HS256'],

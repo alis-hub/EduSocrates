@@ -7,7 +7,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { DatabaseService } from './database/database.service';
 import { attachWhiteboardWs } from './hub/whiteboard.ws';
-import { getCorsOrigins, getJwtSecret } from './common/security';
+import { getCorsOrigins, getJwtSecret, readCookie, SESSION_COOKIE } from './common/security';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
@@ -26,6 +26,20 @@ async function bootstrap() {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
 
+  // Cookie-authenticated requests that change data must come from one of our own sites (CSRF defence
+  // on top of SameSite). Requests that use an Authorization header are not affected.
+  const allowedOrigins = getCorsOrigins(config);
+  app.use((req: any, res: any, next: any) => {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+    if (req.headers.authorization || !readCookie(req.headers.cookie, SESSION_COOKIE)) return next();
+    let origin: string | undefined = req.headers.origin;
+    if (!origin && req.headers.referer) {
+      try { origin = new URL(req.headers.referer).origin; } catch { /* ignore */ }
+    }
+    if (origin && allowedOrigins.includes(origin)) return next();
+    res.status(403).json({ statusCode: 403, message: 'Cross-site request blocked.' });
+  });
+
   app.enableCors({
     origin: getCorsOrigins(config),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -34,7 +48,8 @@ async function bootstrap() {
   });
   app.setGlobalPrefix('api/v1');
 
-  const port = config.get<string>('API_PORT') || 3000;
+  // Render and similar hosts provide the port in PORT.
+  const port = config.get<string>('API_PORT') || config.get<string>('PORT') || 3000;
   await app.listen(port, '0.0.0.0');
 
   try {

@@ -45,7 +45,7 @@ export function middleware(request: NextRequest) {
     pathname === '/register' ||
     pathname.startsWith('/register');
 
-  const token = request.cookies.get('edusocrates_token')?.value;
+  const token = request.cookies.get('gm_session')?.value;
 
   // ── No token ────────────────────────────────────────────────────────────── //
   if (!token) {
@@ -60,15 +60,17 @@ export function middleware(request: NextRequest) {
 
   // Malformed / expired token — clear cookie and redirect
   if (!payload) {
+    if (isAuthPage) return NextResponse.next();
     const res = NextResponse.redirect(new URL('/login', request.url));
-    res.cookies.delete('edusocrates_token');
+    res.cookies.delete('gm_session');
     return res;
   }
 
   // Check expiry
   if (payload.exp && payload.exp * 1000 < Date.now()) {
+    if (isAuthPage) return NextResponse.next();
     const res = NextResponse.redirect(new URL('/login', request.url));
-    res.cookies.delete('edusocrates_token');
+    res.cookies.delete('gm_session');
     return res;
   }
 

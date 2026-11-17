@@ -1,4 +1,7 @@
-import { Controller, Post, Body, HttpCode, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, UseGuards, Res } from '@nestjs/common';
+import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { SESSION_COOKIE, sessionCookieOptions } from '../common/security';
 import { AuthService } from './auth.service';
 import {
   IsEmail, IsString, MinLength, MaxLength, IsIn, IsOptional, IsNotEmpty, Length, IsUUID,
@@ -58,7 +61,7 @@ export class SsoLoginDto {
 @Controller('auth')
 @UseGuards(RateLimitGuard)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService, private readonly config: ConfigService) {}
 
   @Post('login')
   @RateLimit({ name: 'login', limit: 30, windowMs: 15 * 60 * 1000 })
@@ -88,6 +91,15 @@ export class AuthController {
   @HttpCode(200)
   mfaEnable(@Body() dto: VerifyMfaDto) {
     return this.authService.mfaSetupConfirm(dto.tempToken, dto.code);
+  }
+
+  /** Clears the browser session cookie. */
+  @Post('logout')
+  @HttpCode(200)
+  logout(@Res({ passthrough: true }) res: Response) {
+    const { maxAge, ...opts } = sessionCookieOptions(this.config, 0);
+    res.clearCookie(SESSION_COOKIE, opts);
+    return { success: true };
   }
 
   @Post('reset-password')
