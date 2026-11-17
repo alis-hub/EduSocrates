@@ -11,10 +11,11 @@ Apply in this order. Never re-run `002_v230_public_hub.sql` after 004 (it re-ope
    - Creates the restricted role `gurumera_app` (NOBYPASSRLS), tightens RLS, MFA columns.
 2. `database/migrations/005_onboarding.sql` (tenant_type, owner_user_id, grade 6-13 check, lookup indexes)
 3. `database/migrations/006_teacher_audit.sql` (transcript_access_log table with RLS)
-4. `database/production/lock_seed_accounts.sql` (deactivates every account that still has the published seed password)
-5. Create your own super admin:
+4. `database/migrations/007_parent_acknowledgements.sql` (parent_acknowledgements table with RLS)
+5. `database/production/lock_seed_accounts.sql` (deactivates every account that still has the published seed password)
+6. Create your own super admin:
    `DATABASE_URL=<owner url> SUPER_ADMIN_EMAIL=... SUPER_ADMIN_PASSWORD=<14+ chars> node services/api-gateway/scripts/create-super-admin.js`
-6. Do NOT load `database/seed.sql` (dev only).
+7. Do NOT load `database/seed.sql` (dev only).
 
 ## 2. Environment variables (API gateway, AI gateway, web)
 - `NODE_ENV=production`; `ENABLE_DEMO_MODE` unset/false; `NEXT_PUBLIC_ENABLE_DEMO` unset

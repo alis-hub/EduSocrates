@@ -311,6 +311,12 @@ export const api = {
   /** Returns read-only coursework+grades for a specific child (parent must be linked). */
   getChildCoursework: (studentId: string) =>
     apiFetch<any[]>(`/parent/children/${studentId}/coursework`),
+  /** Parent confirms they have reviewed a graded result. */
+  acknowledgeResult: (studentId: string, submissionId: string, note?: string) =>
+    apiFetch<any>(`/parent/children/${studentId}/submissions/${submissionId}/acknowledge`, {
+      method: 'POST',
+      body: JSON.stringify(note ? { note } : {}),
+    }),
   /** Returns rich academic overview, KPIs, and alerts for a specific child. */
   getChildOverview: (studentId: string) =>
     apiFetch<any>(`/parent/children/${studentId}/overview`),

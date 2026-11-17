@@ -588,6 +588,11 @@ export default function TeacherDashboard() {
                               <Star className="w-3.5 h-3.5" />{sub.score}/{selectedCw.max_score}
                             </span>
                           )}
+                          {sub.parent_acknowledgements > 0 && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" title={sub.parent_acknowledged_at ? new Date(sub.parent_acknowledged_at).toLocaleString() : ''}>
+                              Parent reviewed
+                            </span>
+                          )}
                           <span className={`text-xs px-2 py-0.5 rounded-full ${sub.status === 'GRADED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                             {sub.status}
                           </span>

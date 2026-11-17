@@ -209,18 +209,50 @@ export class ParentService {
       `SELECT cw.id, cw.title, cw.description, cw.coursework_type, cw.due_date,
               cw.max_score, cw.ai_guidance_mode,
               sub.name as subject_name, sec.name as section_name,
-              s.status as submission_status, s.score, s.submitted_at, s.teacher_feedback,
-              u.first_name || ' ' || u.last_name as teacher_name
+              s.id as submission_id, s.status as submission_status, s.score, s.submitted_at, s.teacher_feedback,
+              u.first_name || ' ' || u.last_name as teacher_name,
+              pa.acknowledged_at, pa.note as acknowledgement_note
        FROM coursework cw
        JOIN subjects sub ON sub.id = cw.subject_id
        JOIN sections sec ON sec.id = cw.section_id
        JOIN users u ON u.id = cw.creator_id
        JOIN enrollments e ON e.section_id = cw.section_id AND e.student_id = $1
        LEFT JOIN submissions s ON s.coursework_id = cw.id AND s.student_id = $1
+       LEFT JOIN parent_acknowledgements pa ON pa.submission_id = s.id AND pa.parent_id = $3
        WHERE cw.school_id = $2
        ORDER BY cw.due_date ASC`,
-      [studentId, user.schoolId],
+      [studentId, user.schoolId, user.id],
     );
+  }
+
+  /** A parent confirms they have reviewed a graded result. Only for their own linked child; once per submission. */
+  async acknowledgeSubmission(user: any, studentId: string, submissionId: string, note?: string) {
+    await this.verifyParentChildLink(user.id, studentId, user.schoolId);
+    const sub = await this.db.queryWithTenant(
+      user.schoolId,
+      `SELECT id, status FROM submissions WHERE id = $1 AND student_id = $2 AND school_id = $3`,
+      [submissionId, studentId, user.schoolId],
+    );
+    if (!sub.length) throw new NotFoundException('Result not found for this student.');
+    if (sub[0].status !== 'GRADED') {
+      throw new BadRequestException('You can acknowledge a result once the teacher has graded it.');
+    }
+    const cleanNote = note ? String(note).trim().slice(0, 500) || null : null;
+    const rows = await this.db.queryWithTenant(
+      user.schoolId,
+      `INSERT INTO parent_acknowledgements (school_id, parent_id, student_id, submission_id, note)
+       VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (parent_id, submission_id) DO NOTHING
+       RETURNING acknowledged_at, note`,
+      [user.schoolId, user.id, studentId, submissionId, cleanNote],
+    );
+    if (rows.length) return { acknowledged: true, ...rows[0] };
+    const existing = await this.db.queryWithTenant(
+      user.schoolId,
+      `SELECT acknowledged_at, note FROM parent_acknowledgements WHERE parent_id = $1 AND submission_id = $2`,
+      [user.id, submissionId],
+    );
+    return { acknowledged: true, alreadyAcknowledged: true, ...existing[0] };
   }
 
   /**

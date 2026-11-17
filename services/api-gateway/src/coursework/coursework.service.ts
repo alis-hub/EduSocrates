@@ -161,7 +161,9 @@ export class CourseworkService {
     await assertCanManageCoursework(this.db, actor, courseworkId);
     return this.db.queryWithTenant(
       schoolId,
-      `SELECT sub.*, u.first_name, u.last_name, u.email
+      `SELECT sub.*, u.first_name, u.last_name, u.email,
+              (SELECT COUNT(*) FROM parent_acknowledgements pa WHERE pa.submission_id = sub.id)::int AS parent_acknowledgements,
+              (SELECT MAX(pa.acknowledged_at) FROM parent_acknowledgements pa WHERE pa.submission_id = sub.id) AS parent_acknowledged_at
        FROM submissions sub
        JOIN users u ON u.id = sub.student_id
        WHERE sub.coursework_id = $1 AND sub.school_id = $2
