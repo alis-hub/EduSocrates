@@ -49,7 +49,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
       'The AI tutor operates under strict academic integrity — final equations and answer keys are shielded.',
     ],
     nextTool: { label: 'Explore Concept Tree', tab: 'concepts' },
-    badgeText: '5-Layer Guardrailed',
+    badgeText: 'Guardrailed',
     badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   },
   code: {
@@ -178,7 +178,7 @@ const TOOL_CONFIGS: Record<string, ToolConfig> = {
     title: 'Public Academic Resource Bank',
     tagline: 'Real Curriculum Assignments from Leading Academies',
     explanation:
-      'Explore real homework prompts and problem sets published by certified educators across physics, calculus, computer science, and humanities.',
+      'Explore real homework prompts and problem sets published by teachers across physics, calculus, computer science, and humanities.',
     previewSteps: [
       { step: 1, title: 'Select an Assignment', desc: 'Browse assignments by subject area and grade level.' },
       { step: 2, title: 'Open Socratic Workspace', desc: 'Work through the problem with rubric-shielded guidance.' },

@@ -149,7 +149,7 @@ export default function PeerWhiteboardsPage() {
             </span>
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              FERPA-Compliant Peer Safe Controls
+              Private, school-scoped rooms
             </span>
           </div>
         </section>
@@ -230,8 +230,8 @@ export default function PeerWhiteboardsPage() {
                   <p className="text-slate-500">Students can join seamlessly from tablets, laptops, or smartphones by typing a simple code or scanning a QR code.</p>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-slate-200">
-                  <div className="font-bold text-[#1E225B] mb-1">FERPA &amp; Safe Study Controls</div>
-                  <p className="text-slate-500">Rooms feature session moderation, read-only permissions for viewers, and automated room expiry to ensure student privacy.</p>
+                  <div className="font-bold text-[#1E225B] mb-1">Safe Study Controls</div>
+                  <p className="text-slate-500">Only signed-in members of the same school can open a school room, and the room owner decides who can draw.</p>
                 </div>
               </div>
             </div>
@@ -409,9 +409,7 @@ export default function PeerWhiteboardsPage() {
                   <p>
                     <strong>Alex:</strong> Immediately saw how lone-pair lone-pair repulsion compresses the H-O-H angle from $109.5^\circ$ down to $104.5^\circ$, and co-sketched ammonia ($NH_3$ at $107^\circ$) to prove the rule!
                   </p>
-                  <div className="text-[11px] text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                    <strong>Result:</strong> Both students scored 100% on the VSEPR and hybrid orbital section of the midterm.
-                  </div>
+                  <div className="text-[11px] text-slate-500 italic">Illustrative scenario, not a real student result.</div>
                 </div>
               </div>
             </div>

@@ -67,7 +67,7 @@ export function MarketingFooter() {
                     onClick={() => setActiveModal('privacy')}
                     className="hover:text-white text-left transition-colors"
                   >
-                    FERPA &amp; COPPA Policy
+                    Privacy Policy
                   </button>
                 </li>
                 <li>

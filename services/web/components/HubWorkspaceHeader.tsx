@@ -163,7 +163,7 @@ export function HubWorkspaceHeader({
                   </span>
                 </div>
                 <div className="text-slate-600 text-[11px] mt-0.5">
-                  Flashcards, Knowledge Maps, Practice Quizzes, and Whiteboards are <strong>100% free with unlimited access</strong>.
+                  Flashcards, Knowledge Maps, Practice Quizzes, and Whiteboards are <strong>free to use</strong>.
                 </div>
               </div>
             </div>

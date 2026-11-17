@@ -412,9 +412,7 @@ export default function KnowledgeMapsPage() {
                   <p>
                     <strong>The 8-Minute Fix:</strong> A 3-question diagnostic quiz revealed she was mishandling $du = u&apos;(x)dx$. After reviewing the 2-tier flashcard for differentials, the entire concept made sense.
                   </p>
-                  <div className="text-[11px] text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                    <strong>Outcome:</strong> Finished the remaining 12 problem set questions in 25 minutes with 100% accuracy.
-                  </div>
+                  <div className="text-[11px] text-slate-500 italic">Illustrative scenario, not a real student result.</div>
                 </div>
               </div>
             </div>

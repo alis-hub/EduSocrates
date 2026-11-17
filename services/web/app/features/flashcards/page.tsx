@@ -409,9 +409,7 @@ export default function FlashcardsPage() {
                     <p className="mb-2"><strong>Intuition:</strong> Moving magnetic fields induce circular eddy currents in copper that create an opposing upward magnetic field (Lenz&apos;s Law / conservation of energy).</p>
                     <p><strong>Formal Math:</strong> <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-200">ℰ = -dΦ_B/dt</code> where the minus sign represents opposing field orientation.</p>
                   </div>
-                  <div className="text-[11px] text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                    <strong>Test Result:</strong> 100% score on qualitative and quantitative electromagnetic induction problems.
-                  </div>
+                  <div className="text-[11px] text-slate-500 italic">Illustrative scenario, not a real student result.</div>
                 </div>
               </div>
             </div>

@@ -144,7 +144,7 @@ export default function SocraticTutorPage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 font-medium">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-[#249EA0]" />
-              Zero Direct-Answer Leak Guarantee
+              Designed not to hand out answers
             </span>
             <span className="flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-[#F5921D]" />
@@ -436,7 +436,7 @@ export default function SocraticTutorPage() {
         <section className="bg-gradient-to-r from-[#1E225B] to-[#141740] text-white py-16 px-5 sm:px-6">
           <div className="max-w-4xl mx-auto text-center space-y-5">
             <span className="text-xs font-bold text-[#F5921D] uppercase tracking-widest px-3 py-1 rounded-full bg-white/10 border border-white/20 inline-block">
-              100% Free Public Access
+              Free to explore on the Public Hub
             </span>
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
               Ready to Experience Guided Inquiry?

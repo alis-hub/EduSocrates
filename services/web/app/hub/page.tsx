@@ -847,7 +847,7 @@ export default function PublicLearningHubPage() {
                   <div>
                     <div className="font-semibold text-sm text-slate-900">{topic}</div>
                     <div className="text-xs text-slate-500">
-                      {level.replace('_', ' ')} · {mode.replace('_', ' ')} · 5-Layer Guardrailed
+                      {level.replace('_', ' ')} · {mode.replace('_', ' ')} · Guardrailed
                     </div>
                   </div>
                 </div>
@@ -884,7 +884,7 @@ export default function PublicLearningHubPage() {
                     </span>
                   </div>
                   <span className="text-[10px] font-bold text-slate-500 bg-white/80 px-2 py-0.5 rounded-full border border-slate-200 shrink-0">
-                    5-Layer Guardrailed · Zero Answer Leaks
+                    Guardrailed Socratic tutor
                   </span>
                 </div>
 
@@ -1837,7 +1837,7 @@ export default function PublicLearningHubPage() {
                 • <strong>What counts:</strong> Interactive prompts to the Socratic AI Tutor &amp; Code Debugger (3 queries allowed per 24 hours).
               </p>
               <p className="text-[11px] leading-relaxed">
-                • <strong>What is unlimited:</strong> Knowledge Maps, Public Flashcards, Practice Quizzes, STEM Grapher, and Discussions are 100% free with no limit.
+                • <strong>What is unlimited:</strong> Knowledge Maps, Public Flashcards, Practice Quizzes, STEM Grapher, and Discussions are free to use.
               </p>
               <p className="text-[11px] leading-relaxed">
                 • <strong>Reset time:</strong> Allowance resets every 24 hours, or create a free account right now to continue immediately.

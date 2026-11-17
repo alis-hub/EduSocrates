@@ -240,6 +240,7 @@ export default function SchoolDemoPage() {
           </Link>
         </div>
       </header>
+      <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-xs text-center py-2 px-4">Demo with sample data. The school, people and numbers shown here are made up.</div>
 
       {/* ─── Sub-Header with Campus Filter & Tabs ─────────────────────────── */}
       <div className="bg-white border-b border-slate-200 px-6 py-3">
@@ -326,10 +327,10 @@ export default function SchoolDemoPage() {
 
               <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
                 <div className="flex items-center justify-between text-slate-500 text-xs mb-1">
-                  <span>FERPA/COPPA Compliance</span>
+                  <span>Sample metric</span>
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 </div>
-                <div className="text-3xl font-extrabold text-emerald-600">98.4%</div>
+                <div className="text-3xl font-extrabold text-emerald-600">—</div>
                 <div className="text-[11px] text-emerald-700 mt-1">0 Data Leaks Logged</div>
               </div>
 
@@ -527,7 +528,7 @@ export default function SchoolDemoPage() {
           <div className="space-y-6 animate-fadeIn">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-extrabold text-base text-[#1E225B]">Certified Faculty Directory</h3>
+                <h3 className="font-extrabold text-base text-[#1E225B]">Faculty Directory</h3>
                 <p className="text-xs text-slate-500">Educators with assigned subjects and institutional Socratic AI strictness levels</p>
               </div>
             </div>
@@ -623,15 +624,15 @@ export default function SchoolDemoPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-base text-[#1E225B]">AI Safety &amp; Prompt-Injection Defense Logs</h3>
-                <p className="text-xs text-slate-500">Live institutional audit trail verifying zero solution leakage</p>
+                <p className="text-xs text-slate-500">Sample audit trail of how the tutor handled student requests (demo data)</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
                 <div className="text-xs text-slate-500 mb-1">Direct Answers Given</div>
-                <div className="text-3xl font-extrabold text-emerald-600">0 (Zero)</div>
-                <div className="text-[11px] text-emerald-700 font-semibold mt-1">Guaranteed by 5-Layer Defense</div>
+                <div className="text-3xl font-extrabold text-emerald-600">0 (sample)</div>
+                <div className="text-[11px] text-emerald-700 font-semibold mt-1">Sample data</div>
               </div>
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
                 <div className="text-xs text-slate-500 mb-1">Cheating Bypass Attempts</div>
@@ -639,9 +640,9 @@ export default function SchoolDemoPage() {
                 <div className="text-[11px] text-slate-500 mt-1">Converted to Socratic Inquiry</div>
               </div>
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
-                <div className="text-xs text-slate-500 mb-1">FERPA Audit Score</div>
-                <div className="text-3xl font-extrabold text-indigo-700">100% Passed</div>
-                <div className="text-[11px] text-slate-500 mt-1">Full Student Transcript Shielding</div>
+                <div className="text-xs text-slate-500 mb-1">Sample metric</div>
+                <div className="text-3xl font-extrabold text-indigo-700">Sample</div>
+                <div className="text-[11px] text-slate-500 mt-1">Demo data only</div>
               </div>
             </div>
 

@@ -136,7 +136,7 @@ export default function PricingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>FERPA &amp; COPPA Guaranteed Compliance Isolation</span>
+                  <span>Each school's data kept separate from every other school's</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
