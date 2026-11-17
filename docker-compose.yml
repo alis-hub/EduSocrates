@@ -6,13 +6,16 @@ services:
     environment:
       POSTGRES_DB: edusocrates_dev
       POSTGRES_USER: edusocrates
-      POSTGRES_PASSWORD: socrates_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./database/migrations/004_sprint0_security.sql:/migrations/004_sprint0_security.sql:ro
+      - ./database/docker-init/03_sprint0_security.sh:/docker-entrypoint-initdb.d/03_sprint0_security.sh:ro
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U edusocrates -d edusocrates_dev"]
       interval: 10s
@@ -24,7 +27,7 @@ services:
     image: redis:7-alpine
     container_name: edusocrates-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -37,9 +40,13 @@ services:
       context: ./services/ai-gateway
       dockerfile: Dockerfile
     container_name: edusocrates-ai-gateway
-    ports:
-      - "8008:8000"
+    # Internal only: the API gateway reaches it over the compose network; the browser never does.
+    expose:
+      - "8000"
     environment:
+      ENVIRONMENT: ${APP_ENV:-development}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:?Set AI_GATEWAY_API_KEY in .env}
+      AES_ENCRYPTION_KEY: ${AES_ENCRYPTION_KEY:?Set AES_ENCRYPTION_KEY in .env}
       DEFAULT_PROVIDER: ${DEFAULT_PROVIDER:-mock}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -63,10 +70,17 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://edusocrates:socrates_password@postgres:5432/edusocrates_dev
+      DATABASE_URL: postgresql://edusocrates:${POSTGRES_PASSWORD}@postgres:5432/edusocrates_dev
+      DATABASE_APP_URL: postgresql://gurumera_app:${APP_DB_PASSWORD}@postgres:5432/edusocrates_dev
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: super-secret-edusocrates-jwt-key-change-in-prod
-      JWT_EXPIRES_IN: 1d
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET (32+ random characters) in .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      NODE_ENV: ${NODE_ENV:-development}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:?Set AI_GATEWAY_API_KEY in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3001}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      ENABLE_DEMO_MODE: ${ENABLE_DEMO_MODE:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-}
       API_PORT: "3000"
       AI_GATEWAY_URL: http://ai-gateway:8000
     depends_on:
