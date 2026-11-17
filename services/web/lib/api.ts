@@ -173,6 +173,7 @@ export const api = {
 
   teacherClasses: {
     list: () => apiFetch<any[]>('/teacher/classes'),
+    capabilities: () => apiFetch<{ canCreate: boolean }>('/teacher/classes/capabilities'),
     create: (data: { className: string; gradeLevel: number; subjectName: string; sectionName?: string; campusName?: string }) =>
       apiFetch<any>('/teacher/classes', { method: 'POST', body: JSON.stringify(data) }),
     rotateCode: (sectionId: string) => apiFetch<any>(`/teacher/classes/${sectionId}/join-code`, { method: 'POST' }),

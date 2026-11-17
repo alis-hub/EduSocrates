@@ -16,6 +16,10 @@ export class TeacherClassesService {
     return rows[0]?.tenant_type === 'TUTOR';
   }
 
+  canCreateClasses(schoolId: string) {
+    return this.isTutorTenant(schoolId);
+  }
+
   /** A teacher can manage a section if they own the academy, or are allocated to it. */
   private async assertCanManageSection(actor: Actor, sectionId: string) {
     if (await this.isTutorTenant(actor.schoolId)) {

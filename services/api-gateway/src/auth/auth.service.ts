@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import {
   Injectable, UnauthorizedException, BadRequestException, ConflictException,
   NotFoundException, ForbiddenException, ServiceUnavailableException, Logger,
@@ -67,7 +68,7 @@ export class AuthService {
       campusId: user.campus_id,
       typ: 'access',
     };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = this.jwtService.sign(payload, { jwtid: randomUUID() });
     return {
       accessToken,
       user: {
@@ -334,6 +335,19 @@ export class AuthService {
     // Signs out every device that was using the old password.
     await this.redis.set(`rv:${userId}`, Date.now(), 60 * 60 * 24 * 30);
     return { success: true, message: 'Your password has been changed. Please sign in.' };
+  }
+
+  /** Signs out this one token (logout): it is refused from now until it would have expired anyway. */
+  async revokeToken(token?: string | null) {
+    if (!token) return;
+    try {
+      const p: any = this.jwtService.verify(token, { algorithms: ['HS256'] });
+      if (p?.typ !== 'access' || !p.jti) return;
+      const ttl = Math.max(1, (p.exp ?? 0) - Math.floor(Date.now() / 1000));
+      await this.redis.set(`rt:${p.jti}`, 1, ttl);
+    } catch {
+      /* already invalid: nothing to revoke */
+    }
   }
 
   /** Invalidates every token issued before now and hands back a fresh token for the calling device. */

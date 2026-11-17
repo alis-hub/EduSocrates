@@ -24,10 +24,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload & { typ?: string; iat?: number }) {
+  async validate(payload: JwtPayload & { typ?: string; iat?: number; jti?: string }) {
     // MFA-challenge / MFA-setup tokens share the signing key: they must never work as access tokens.
     if (payload.typ !== 'access') {
       throw new UnauthorizedException('Invalid token type.');
+    }
+    if (payload.jti && (await this.redis.get(`rt:${payload.jti}`))) {
+      throw new UnauthorizedException('Signed out. Please sign in again.');
     }
     // "Sign out other devices": tokens issued before the revocation mark are rejected.
     const revokedBefore = await this.redis.get<number>(`rv:${payload.sub}`);

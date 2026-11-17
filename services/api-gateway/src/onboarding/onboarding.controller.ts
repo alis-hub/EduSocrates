@@ -103,6 +103,12 @@ export class StudentJoinController {
 export class TeacherClassesController {
   constructor(private readonly classes: TeacherClassesService) {}
 
+  /** Lets the web app show "Add class" only to tutors who own their academy. */
+  @Get('capabilities')
+  async capabilities(@CurrentUser() user: any) {
+    return { canCreate: await this.classes.canCreateClasses(user.schoolId) };
+  }
+
   @Get()
   list(@CurrentUser() user: any) {
     return this.classes.list(user);

@@ -10,7 +10,10 @@ type ClassRow = {
   joinCode?: { code: string; expiresAt?: string } | null;
 };
 
-export function TeacherClassesPanel({ canCreate }: { canCreate: boolean }) {
+export function TeacherClassesPanel({ canCreate: canCreateProp }: { canCreate: boolean }) {
+  const [allowed, setAllowed] = useState(false);
+  const canCreate = canCreateProp && allowed;
+  useEffect(() => { api.teacherClasses.capabilities().then(r => setAllowed(!!r.canCreate)).catch(() => setAllowed(false)); }, []);
   const [rows, setRows] = useState<ClassRow[]>([]);
   const [open, setOpen] = useState<string | null>(null);
   const [roster, setRoster] = useState<any[]>([]);

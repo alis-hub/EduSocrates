@@ -1,7 +1,7 @@
-import { Controller, Post, Body, HttpCode, UseGuards, Res } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, UseGuards, Res, Req } from '@nestjs/common';
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { SESSION_COOKIE, sessionCookieOptions } from '../common/security';
+import { SESSION_COOKIE, readCookie, sessionCookieOptions } from '../common/security';
 import { AuthService } from './auth.service';
 import {
   IsEmail, IsString, MinLength, MaxLength, IsIn, IsOptional, IsNotEmpty, Length, IsUUID,
@@ -96,7 +96,9 @@ export class AuthController {
   /** Clears the browser session cookie. */
   @Post('logout')
   @HttpCode(200)
-  logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+    const bearer = /^Bearer (.+)$/i.exec(req.headers?.authorization || '')?.[1];
+    await this.authService.revokeToken(readCookie(req.headers?.cookie, SESSION_COOKIE) || bearer);
     const { maxAge, ...opts } = sessionCookieOptions(this.config, 0);
     res.clearCookie(SESSION_COOKIE, opts);
     return { success: true };
