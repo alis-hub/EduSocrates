@@ -105,20 +105,30 @@ export const api = {
     return res;
   },
 
-  ssoLogin: async (data: {
-    provider: 'google' | 'linkedin' | 'microsoft';
-    email: string;
-    firstName?: string;
-    lastName?: string;
-  }) => {
-    const res = await apiFetch<{ accessToken: string; user: any; tenantRouted?: boolean }>(
-      '/auth/sso',
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      },
-    );
+  /** Google sign-in. `idToken` is the credential returned by Google Identity Services; the server verifies it. */
+  ssoLogin: async (data: { provider: 'google'; idToken: string }) => {
+    const res = await apiFetch<{ accessToken: string; user: any }>('/auth/sso', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
     setStoredAuth(res.accessToken, res.user);
+    return res;
+  },
+
+  /** Administrator authenticator-app enrolment, step 1: get a secret for the app. */
+  mfaSetupStart: (tempToken: string) =>
+    apiFetch<{ secret: string; otpauthUrl: string; expiresInSeconds: number }>('/auth/mfa/setup', {
+      method: 'POST',
+      body: JSON.stringify({ tempToken }),
+    }),
+
+  /** Step 2: confirm with a code from the app; signs the administrator in. */
+  mfaSetupConfirm: async (tempToken: string, code: string) => {
+    const res = await apiFetch<{ accessToken: string; user: any }>('/auth/mfa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ tempToken, code }),
+    });
+    if (res.accessToken) setStoredAuth(res.accessToken, res.user);
     return res;
   },
 
@@ -129,9 +139,13 @@ export const api = {
   },
 
   revokeOtherSessions: async () => {
-    return apiFetch<{ success: boolean; message: string }>('/auth/sessions/revoke-others', {
-      method: 'POST',
-    });
+    const res = await apiFetch<{ success: boolean; message: string; accessToken?: string; user?: any }>(
+      '/auth/sessions/revoke-others',
+      { method: 'POST' },
+    );
+    // The server signs out every other device and gives this one a fresh token.
+    if (res.accessToken && res.user) setStoredAuth(res.accessToken, res.user);
+    return res;
   },
 
   redeemInvite: async (inviteCode: string) => {
@@ -145,20 +159,6 @@ export const api = {
     setStoredAuth(res.accessToken, res.user);
     return res;
   },
-
-  register: (data: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    schoolId: string;
-    campusId?: string;
-  }) =>
-    apiFetch<{ id: string }>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
 
   // ── Admin — Campuses ──────────────────────────────────────────────────── //
   getCampuses: () => apiFetch<any[]>('/admin/campuses'),
@@ -521,11 +521,6 @@ export const api = {
 
     // Gamification
     getGamificationProfile: () => apiFetch<any>('/hub/gamification/profile'),
-    recordActivity: (xpDelta = 10, badgeCode?: string) =>
-      apiFetch<any>('/hub/gamification/record-activity', {
-        method: 'POST',
-        body: JSON.stringify({ xpDelta, badgeCode }),
-      }),
   },
 };
 

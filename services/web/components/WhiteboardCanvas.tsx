@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { api, getWsBaseUrl } from '@/lib/api';
+import { api, getWsBaseUrl, getToken } from '@/lib/api';
 import { Eraser, PenTool, StickyNote, Trash2, Users, Wifi, WifiOff } from 'lucide-react';
 
 interface Stroke {
@@ -67,7 +67,8 @@ export function WhiteboardCanvas({
 
   useEffect(() => {
     let closed = false;
-    const wsUrl = `${getWsBaseUrl()}/whiteboard/${roomId}?name=${encodeURIComponent(userName)}`;
+    const token = getToken();
+    const wsUrl = `${getWsBaseUrl()}/whiteboard/${roomId}?name=${encodeURIComponent(userName)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
     try {
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
