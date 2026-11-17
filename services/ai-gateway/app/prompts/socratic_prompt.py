@@ -172,7 +172,9 @@ Provide an encouraging response ending with ONE targeted diagnostic question. Do
 
 def build_student_turn_message(student_text: str, turn_index: int) -> str:
     """Wraps student message in a delimited fence to prevent prompt escape."""
-    return f'<student_message turn="{turn_index}">{student_text}</student_message>'
+    # Escape angle brackets so a student cannot close the fence and smuggle in "instructions".
+    safe = (student_text or "").replace("<", "&lt;").replace(">", "&gt;")
+    return f'<student_message turn="{turn_index}">{safe}</student_message>'
 
 
 def get_answer_key_terms(ai_system_notes: str) -> List[str]:
@@ -181,11 +183,14 @@ def get_answer_key_terms(ai_system_notes: str) -> List[str]:
     for Layer 5 output verification. Simple heuristic extraction.
     """
     terms = []
+    # Teachers can mark answers explicitly: [[answer: 3/5]] — the most reliable way to protect them.
+    terms.extend(m.strip() for m in re.findall(r"\[\[\s*answers?\s*:\s*(.+?)\s*\]\]", ai_system_notes or "", re.IGNORECASE) if m.strip())
     answer_patterns = [
         r'(?:final\s+answer|answer|result|solution)\s*(?:is|:)\s*([^\.,\n]+)',
         r'Target\s+\w+\s*:\s*([^\.,\n]+)',
     ]
+    untagged = re.sub(r"\[\[\s*answers?\s*:.+?\]\]", " ", ai_system_notes or "", flags=re.IGNORECASE)
     for pat in answer_patterns:
-        matches = re.findall(pat, ai_system_notes or "", re.IGNORECASE)
+        matches = re.findall(pat, untagged, re.IGNORECASE)
         terms.extend([m.strip() for m in matches if m.strip()])
     return terms

@@ -2,7 +2,7 @@ import re
 import unicodedata
 from enum import Enum
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 class ThreatLevel(str, Enum):
     SAFE = "SAFE"
@@ -169,12 +169,29 @@ _NAKED_ANSWER_PATTERN = _re.compile(
 
 
 
+_FORMAT_NOISE = re.compile(r"[\s,_*`'\"\u00a0]+")
+
+
+def _squash(text: str) -> str:
+    """Lowercase, NFKC and drop spacing/markdown noise so '3 / 5', '3/5' and '**3/5**' all match."""
+    return _FORMAT_NOISE.sub("", unicodedata.normalize("NFKC", text).lower())
+
+
+def _term_in_text(term: str, text: str, squashed_text: str) -> bool:
+    t = _squash(term)
+    if not t:
+        return False
+    if len(t) < 3:
+        # Very short answers ("5", "x") only count as whole tokens, or every reply would be blocked.
+        return re.search(r"(?<![\w.])" + re.escape(term.strip()) + r"(?![\w.])", text, re.IGNORECASE) is not None
+    return t in squashed_text
+
+
 def layer5_verify_output(response_chunk: str, answer_key_terms: List[str]) -> Tuple[bool, str]:
     """
-    Layer 5: Real-time output verification.
-    Scans accumulated LLM response chunk against known answer key terms,
-    full solution code blocks, and naked final-answer patterns.
-    If any direct answer signal is detected, intercept and return a safe Socratic redirect.
+    Layer 5: output verification.
+    Scans the accumulated LLM response for teacher answer-key terms (tolerant of spacing and
+    markdown formatting), full solution code blocks, and naked final-answer patterns.
     Returns (is_safe, safe_response_or_chunk).
     """
     redirect = (
@@ -183,17 +200,48 @@ def layer5_verify_output(response_chunk: str, answer_key_terms: List[str]) -> Tu
         "can you identify the first principle that might apply to this problem? "
         "Walk me through your initial reasoning. 🔍"
     )
-    lowered = response_chunk.lower()
-    # Check teacher answer key terms
+    squashed = _squash(response_chunk)
     for term in answer_key_terms:
-        if term.lower() in lowered:
+        if _term_in_text(term, response_chunk, squashed):
             return False, redirect
-    # Check for full solution code blocks
     if _CODE_BLOCK_PATTERN.search(response_chunk):
         return False, redirect
-    # Check for naked final answer patterns (only trigger if answer_key_terms present)
-    # Only intercept if we also have an answer_key_term or the response ends abruptly
     if answer_key_terms and _NAKED_ANSWER_PATTERN.search(response_chunk):
         return False, redirect
     return True, response_chunk
 
+
+class StreamGuard:
+    """Releases streamed text only after it has been checked.
+
+    The old loop yielded each token as soon as it arrived, so an answer split across tokens
+    ("3", "/", "5") was partly on its way to the student before the filter could see all of it.
+    StreamGuard holds back the tail of the stream (longer than any answer-key term) and any
+    unfinished code block, and only releases text that can no longer become part of a leak.
+    """
+
+    def __init__(self, answer_key_terms: List[str]):
+        self.terms = answer_key_terms
+        self.buf = ""
+        self.released = 0
+        longest = max((len(t) for t in answer_key_terms), default=0)
+        self.holdback = min(longest * 2 + 8, 300) if answer_key_terms else 0
+
+    def feed(self, token: str) -> Tuple[Optional[str], Optional[str]]:
+        """Returns (text_to_send, redirect). If redirect is not None the stream must stop."""
+        self.buf += token
+        ok, msg = layer5_verify_output(self.buf, self.terms)
+        if not ok:
+            return None, msg
+        upto = max(self.released, len(self.buf) - self.holdback)
+        if self.buf.count("```") % 2 == 1:  # inside an unfinished code block: keep it back
+            upto = min(upto, self.buf.rfind("```"))
+            upto = max(upto, self.released)
+        out = self.buf[self.released:upto]
+        self.released = upto
+        return out, None
+
+    def flush(self) -> str:
+        out = self.buf[self.released:]
+        self.released = len(self.buf)
+        return out

@@ -55,6 +55,8 @@ async def session_get(session_id: str) -> Optional[dict]:
             return None
         session = json.loads(raw)
         # Decrypt message_history if it was stored encrypted
+        if 'secret_enc' in session:
+            session.update(decrypt_json(session.pop('secret_enc'), settings.AES_ENCRYPTION_KEY))
         if 'message_history_enc' in session:
             session['message_history'] = decrypt_json(
                 session.pop('message_history_enc'), settings.AES_ENCRYPTION_KEY
@@ -72,6 +74,10 @@ async def session_set(session_id: str, data: dict) -> None:
     try:
         # Work on a shallow copy so the caller's dict is unmodified
         stored = dict(data)
+        # The system prompt and answer-key terms contain the teacher's notes/answers: encrypt them too.
+        secret = {k: stored.pop(k) for k in ('system_prompt', 'answer_key_terms') if k in stored}
+        if secret:
+            stored['secret_enc'] = encrypt_json(secret, settings.AES_ENCRYPTION_KEY)
         if 'message_history' in stored:
             stored['message_history_enc'] = encrypt_json(
                 stored.pop('message_history'), settings.AES_ENCRYPTION_KEY
