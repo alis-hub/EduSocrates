@@ -116,15 +116,35 @@ export default function LoginPage() {
   const [sessionModal, setSessionModal] = useState(false);
   const [resettingDemo, setResettingDemo] = useState(false);
 
+  // The same email can belong to more than one school; the person picks which workspace to open.
+  const [accountChoices, setAccountChoices] = useState<
+    { schoolId: string; schoolName: string; role: string; tenantType?: string }[] | null
+  >(null);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('created') === 'school') {
+      setEmail(q.get('email') || '');
+      setInfoMsg('Your school is ready. Sign in with the email and password you just chose. You will set up an authenticator app on first sign-in.');
+    }
+  }, []);
+
   const pwdStrength = evaluatePasswordStrength(password);
 
-  async function performLogin(targetEmail: string, targetPass: string, optionalMfa?: string) {
+  async function performLogin(targetEmail: string, targetPass: string, optionalMfa?: string, schoolId?: string) {
     setError('');
     setInfoMsg('');
     setSubmitting(true);
 
     try {
-      const res = await api.login(targetEmail, targetPass, optionalMfa);
+      const res = await api.login(targetEmail, targetPass, optionalMfa, schoolId);
+      if (res?.requiresAccountChoice) {
+        setAccountChoices(res.accounts || []);
+        setInfoMsg('This email has more than one account. Choose where to sign in.');
+        setSubmitting(false);
+        return;
+      }
+      setAccountChoices(null);
       if (res?.requiresMfa) {
         setMfaChallenge({
           tempToken: res.tempToken,
@@ -317,6 +337,22 @@ export default function LoginPage() {
             <div className="mb-4 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800 border border-emerald-200 flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
               <span>{infoMsg}</span>
+            </div>
+          )}
+          {accountChoices && accountChoices.length > 0 && (
+            <div className="mb-4 space-y-2">
+              {accountChoices.map(a => (
+                <button
+                  key={a.schoolId}
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => performLogin(email, password, undefined, a.schoolId)}
+                  className="w-full text-left rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm hover:border-blue-400 disabled:opacity-50"
+                >
+                  <span className="font-semibold text-slate-900">{a.schoolName}</span>
+                  <span className="ml-2 text-xs text-slate-500">{a.role.replace('_', ' ').toLowerCase()}</span>
+                </button>
+              ))}
             </div>
           )}
 

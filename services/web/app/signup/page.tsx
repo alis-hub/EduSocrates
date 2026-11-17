@@ -131,30 +131,24 @@ export default function SignupPage() {
           setSubmitting(false);
           return;
         }
-        // First register public learner then redeem code, or redeem directly
-        await api.publicSignup({ email, password, firstName, lastName });
-        const res = await api.redeemInvite(inviteCode.trim());
-        setInfoMsg(`Successfully enrolled in ${res.schoolName}! Redirecting...`);
+        const res = await api.joinClass({ code: inviteCode.trim(), email, password, firstName, lastName });
+        setInfoMsg(`Joined ${res.joined?.className || 'your class'} at ${res.joined?.schoolName || 'your school'}! Redirecting...`);
         setTimeout(() => {
           window.location.href = '/student';
         }, 1000);
       } else if (selectedRole === 'TEACHER') {
-        // Teacher registration flow
-        await api.publicSignup({ email, password, firstName, lastName });
-        setInfoMsg('Faculty account created. Pending institutional subject allocation. Redirecting to workspace...');
-        setTimeout(() => {
-          window.location.href = '/teacher';
-        }, 1200);
+        window.location.href = '/start/teacher';
+        return;
       } else if (selectedRole === 'PARENT') {
-        if (!parentToken.trim()) {
-          setError('Please enter your school-issued parent invitation code or use the demo sandbox.');
+        // Parents join through the personal invitation link their school sends them.
+        const tok = parentToken.trim().split('/').pop() || '';
+        if (!tok) {
+          setError('Paste the invitation link or code your school sent you.');
           setSubmitting(false);
           return;
         }
-        setInfoMsg('Parent link verified. Redirecting to your family dashboard...');
-        setTimeout(() => {
-          window.location.href = '/parent';
-        }, 1000);
+        window.location.href = `/parent/invitation/${encodeURIComponent(tok)}`;
+        return;
       }
     } catch (err: any) {
       setError(err?.message || 'Unable to complete registration. Please try again.');
@@ -337,11 +331,11 @@ export default function SignupPage() {
               </div>
               <h3 className="font-bold text-sm text-[#1E225B]">Register a School</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Set up a complete multi-campus digital academy. Configure academic years, grade sections, faculty rosters, and CSV imports.
+                Create your school's workspace in a minute. Add teachers, classes and students afterwards.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-purple-700">
-              <span>6-Step Guided Onboarding</span>
+              <span>Quick setup</span>
               {selectedRole === 'SCHOOL_ADMIN' && <Check className="w-4 h-4" />}
             </div>
           </button>
@@ -392,14 +386,14 @@ export default function SignupPage() {
                 Register Your School or Academy
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto">
-                Setting up an institution creates an isolated multi-tenant organization in PostgreSQL with FERPA &amp; COPPA compliance, custom campus domains, and administrator credentials.
+                Create a private workspace for your school or academy with an administrator account. Teachers and students join with simple class codes.
               </p>
               <div className="pt-2">
                 <Link
-                  href="/schools"
+                  href="/start/school"
                   className="inline-flex items-center gap-2 bg-[#1E225B] hover:bg-[#141740] text-white font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-md"
                 >
-                  <span>Launch School Onboarding Wizard</span>
+                  <span>Set up my school</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>

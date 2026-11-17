@@ -599,22 +599,10 @@ export default function PublicLearningHubPage() {
     }
   };
 
-  const handleRedeemInvite = async (e: React.FormEvent) => {
+  // Hub learners stay independent; a class code creates a separate school account on the join page.
+  const handleRedeemInvite = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!requireAccountForSave()) return;
-    setInviteBusy(true);
-    try {
-      const res = await api.redeemInvite(inviteCode);
-      setInviteModalOpen(false);
-      showToast(`Joined ${res.schoolName}! Redirecting to your Student Dashboard...`);
-      setTimeout(() => {
-        window.location.href = '/student';
-      }, 900);
-    } catch (err: any) {
-      showToast('Error: ' + err.message);
-    } finally {
-      setInviteBusy(false);
-    }
+    window.location.href = `/join?code=${encodeURIComponent(inviteCode.trim())}`;
   };
 
   return (

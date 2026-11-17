@@ -62,10 +62,10 @@ export function setStoredAuth(accessToken: string, user: any) {
 
 export const api = {
   // ── Auth ──────────────────────────────────────────────────────────────── //
-  login: async (email: string, password: string, mfaCode?: string) => {
+  login: async (email: string, password: string, mfaCode?: string, schoolId?: string) => {
     const res = await apiFetch<any>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password, ...(mfaCode ? { mfaCode } : {}) }),
+      body: JSON.stringify({ email, password, ...(mfaCode ? { mfaCode } : {}), ...(schoolId ? { schoolId } : {}) }),
     });
     if (res.accessToken) {
       setStoredAuth(res.accessToken, res.user);
@@ -148,16 +148,44 @@ export const api = {
     return res;
   },
 
-  redeemInvite: async (inviteCode: string) => {
-    const res = await apiFetch<{ accessToken: string; user: any; schoolName: string }>(
-      '/auth/redeem-invite',
-      {
-        method: 'POST',
-        body: JSON.stringify({ inviteCode }),
-      },
-    );
-    setStoredAuth(res.accessToken, res.user);
+  // ── Onboarding & class codes ──────────────────────────────────────────── //
+  /** A school creates its own workspace. The administrator then signs in and sets up an authenticator app. */
+  createSchool: (data: {
+    schoolName: string; city?: string;
+    adminFirstName: string; adminLastName: string; adminEmail: string; adminPassword: string;
+  }) => apiFetch<any>('/onboarding/school', { method: 'POST', body: JSON.stringify(data) }),
+
+  /** An independent teacher / academy creates a workspace with a first class. Signs them in. */
+  createTutor: async (data: {
+    firstName: string; lastName: string; email: string; password: string;
+    academyName: string; className: string; gradeLevel: number; subjectName: string;
+    sectionName?: string; campusName?: string; city?: string;
+  }) => {
+    const res = await apiFetch<any>('/onboarding/tutor', { method: 'POST', body: JSON.stringify(data) });
+    if (res.accessToken) setStoredAuth(res.accessToken, res.user);
     return res;
+  },
+
+  /** A new student creates an account in the class's school using a class code. */
+  joinClass: async (data: { code: string; firstName: string; lastName: string; email: string; password: string }) => {
+    const res = await apiFetch<any>('/join/class', { method: 'POST', body: JSON.stringify(data) });
+    if (res.accessToken) setStoredAuth(res.accessToken, res.user);
+    return res;
+  },
+
+  /** An existing student adds another class from the same school. */
+  joinAnotherClass: (code: string) =>
+    apiFetch<any>('/student/join-class', { method: 'POST', body: JSON.stringify({ code }) }),
+
+  teacherClasses: {
+    list: () => apiFetch<any[]>('/teacher/classes'),
+    create: (data: { className: string; gradeLevel: number; subjectName: string; sectionName?: string; campusName?: string }) =>
+      apiFetch<any>('/teacher/classes', { method: 'POST', body: JSON.stringify(data) }),
+    rotateCode: (sectionId: string) => apiFetch<any>(`/teacher/classes/${sectionId}/join-code`, { method: 'POST' }),
+    revokeCode: (sectionId: string) => apiFetch<any>(`/teacher/classes/${sectionId}/join-code`, { method: 'DELETE' }),
+    students: (sectionId: string) => apiFetch<any[]>(`/teacher/classes/${sectionId}/students`),
+    removeStudent: (sectionId: string, studentId: string) =>
+      apiFetch<any>(`/teacher/classes/${sectionId}/students/${studentId}`, { method: 'DELETE' }),
   },
 
   // ── Admin — Campuses ──────────────────────────────────────────────────── //
@@ -367,36 +395,6 @@ export const api = {
       campusCity: string;
       roleType: string;
     }) => apiFetch('/leads/school-inquiry', { method: 'POST', body: JSON.stringify(data) }),
-    onboardingWizard: async (data: {
-      schoolName: string;
-      domain?: string;
-      adminEmail: string;
-      adminPassword: string;
-      adminFirstName: string;
-      adminLastName: string;
-      campusName: string;
-      campusCity: string;
-      className: string;
-      academicYear?: string;
-      sectionName?: string;
-      subjectName: string;
-      inviteCode?: string;
-      secondaryCampusName?: string;
-      secondaryCampusCity?: string;
-      brandingColor?: string;
-      subdomain?: string;
-      aiGuidanceMode?: string;
-      retentionPolicy?: string;
-      ssoGoogle?: boolean;
-      ssoMicrosoft?: boolean;
-    }) => {
-      const res = await apiFetch<{ accessToken: string; user: any; provisioned: any }>(
-        '/onboarding/wizard',
-        { method: 'POST', body: JSON.stringify(data) },
-      );
-      setStoredAuth(res.accessToken, res.user);
-      return res;
-    },
 
     // Try-as-a-Teacher Sandbox
     startTeacherSandbox: () => apiFetch<any>('/sandbox/teacher/start', { method: 'POST' }),

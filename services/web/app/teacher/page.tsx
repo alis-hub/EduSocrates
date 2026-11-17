@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react';
 import { api, getStoredUser, logout } from '@/lib/api';
 import { BrandLogo } from '@/components/BrandLogo';
+import { TeacherClassesPanel } from '@/components/TeacherClassesPanel';
 import {
   BookOpen, LogOut, PlusCircle, MessageSquare, CheckSquare2, ChevronLeft,
   ShieldAlert, Star, FileText, Eye, X, Sparkles, Globe, PenTool,
 } from 'lucide-react';
 
-type View = 'list' | 'create' | 'audit' | 'submissions' | 'transcript';
+type View = 'list' | 'classes' | 'create' | 'audit' | 'submissions' | 'transcript';
 
 const GUIDANCE_MODES = [
   { value: 'SOCRATIC_STRICT', label: 'Socratic Strict — guiding questions only' },
@@ -180,11 +181,12 @@ export default function TeacherDashboard() {
         )}
 
         {/* ── Main Tab Nav ─────────────────────────────────────────────────── */}
-        {(view === 'list' || view === 'create' || view === 'audit') && (
+        {(view === 'list' || view === 'classes' || view === 'create' || view === 'audit') && (
           <>
             <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-8 w-fit">
               {[
                 { key: 'list', label: 'My Coursework', icon: CheckSquare2 },
+                { key: 'classes', label: 'My Classes', icon: CheckSquare2 },
                 { key: 'create', label: 'New Coursework', icon: PlusCircle },
                 { key: 'audit', label: 'AI Audit Log', icon: ShieldAlert },
               ].map(({ key, label, icon: Icon }) => (
@@ -224,6 +226,8 @@ export default function TeacherDashboard() {
                 ))}
               </div>
             )}
+
+            {view === 'classes' && <TeacherClassesPanel canCreate={true} />}
 
             {/* ── Create Coursework ───────────────────────────────────────── */}
             {view === 'create' && (

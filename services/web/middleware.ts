@@ -36,7 +36,8 @@ export function middleware(request: NextRequest) {
 
   // Paths that need protection
   const protectedPrefixes = ['/admin', '/teacher', '/student', '/super-admin', '/parent'];
-  const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p));
+  const isProtected =
+    protectedPrefixes.some((p) => pathname.startsWith(p)) && !pathname.startsWith('/parent/invitation');
 
   const isAuthPage =
     pathname === '/login' ||
