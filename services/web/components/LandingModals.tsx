@@ -39,11 +39,11 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
             {activeModal === 'pricing' && <Sparkles className="w-5 h-5 text-[#F5921D]" />}
             {activeModal === 'contact' && <Mail className="w-5 h-5 text-[#1E225B]" />}
             <h3 className="font-bold text-[#1E225B] text-base">
-              {activeModal === 'privacy' && 'FERPA & COPPA Student Privacy Policy'}
+              {activeModal === 'privacy' && 'Privacy Policy'}
               {activeModal === 'terms' && 'Terms of Service & Academic Integrity'}
               {activeModal === 'faq' && 'Frequently Asked Questions (FAQ)'}
-              {activeModal === 'pricing' && 'GuruMera Plans & Pricing Tiers'}
-              {activeModal === 'contact' && 'Contact Support & Institutional Sales'}
+              {activeModal === 'pricing' && 'Plans & Pricing'}
+              {activeModal === 'contact' && 'Contact Us'}
             </h3>
           </div>
           <button
@@ -60,20 +60,30 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
           {/* Privacy Policy */}
           {activeModal === 'privacy' && (
             <div className="space-y-3">
-              <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-3 rounded-xl text-xs font-medium">
-                🛡️ GuruMera is architected in full alignment with the Family Educational Rights and Privacy Act (FERPA) and the Children&apos;s Online Privacy Protection Act (COPPA).
-              </div>
-              <h4 className="font-bold text-[#1E225B]">1. Zero Commercial Sale of Student Data</h4>
+              <p className="text-xs text-slate-500">Last updated: November 2026</p>
+              <h4 className="font-bold text-[#1E225B]">1. What we collect</h4>
               <p>
-                GuruMera does not sell, rent, monetize, or profile student data, learning dialogues, or student coursework for commercial advertising. Learner interactions are strictly processed to provide Socratic educational guidance.
+                Your name, email address and a securely hashed password; the class or school you belong to; coursework, submissions, grades and teacher feedback; and your conversations with the AI tutor. We do not collect payment card details on this site.
               </p>
-              <h4 className="font-bold text-[#1E225B]">2. Multi-Tenant School Isolation</h4>
+              <h4 className="font-bold text-[#1E225B]">2. Who can see it</h4>
               <p>
-                Institutional data (classes, rubrics, submissions, and teacher transcripts) is isolated using PostgreSQL Row-Level Security (RLS) scoped strictly by School ID. No institutional data is visible to external public users.
+                Each school&apos;s data is kept separate from every other school&apos;s at the database level. Within a school, your teachers can see your coursework and your AI tutor conversations for their classes, and every time a teacher opens a conversation it is logged. A parent or guardian linked to a student by the school can see that student&apos;s coursework, grades and progress. Learners on the free Public Hub are separate from any school.
               </p>
-              <h4 className="font-bold text-[#1E225B]">3. Redaction &amp; Safety Filters</h4>
+              <h4 className="font-bold text-[#1E225B]">3. AI processing</h4>
               <p>
-                Student personal identifiers (PII such as phone numbers, emails, and student ID numbers) are redacted in real time before AI processing to guarantee privacy and security.
+                Messages to the AI tutor are sent to our AI provider to produce a reply. Before sending, we try to remove phone numbers, email addresses and ID numbers from messages. This filter is automatic and not perfect, so please do not type personal details into the tutor.
+              </p>
+              <h4 className="font-bold text-[#1E225B]">4. What we do not do</h4>
+              <p>
+                We do not sell student data and we do not show advertising.
+              </p>
+              <h4 className="font-bold text-[#1E225B]">5. Children</h4>
+              <p>
+                GuruMera is for students in Grade 6 and above. A school or a parent should set up accounts for younger teenagers.
+              </p>
+              <h4 className="font-bold text-[#1E225B]">6. Your choices</h4>
+              <p>
+                To see, correct or delete your data, contact your school administrator or write to us using the Contact option. Schools can ask us to delete their workspace.
               </p>
             </div>
           )}
@@ -83,7 +93,7 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
             <div className="space-y-3">
               <h4 className="font-bold text-[#1E225B]">1. The Socratic Honor Code</h4>
               <p>
-                GuruMera is designed to build independent problem-solving habits. Users agree not to attempt to bypass, jailbreak, or tamper with the 5-layer academic guardrails to extract unearned homework solutions or answer keys.
+                GuruMera is designed to build independent problem-solving habits. Users agree not to attempt to bypass, jailbreak, or tamper with the tutor's safeguards to extract unearned homework solutions or answer keys.
               </p>
               <h4 className="font-bold text-[#1E225B]">2. Acceptable Use</h4>
               <p>
@@ -91,7 +101,7 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
               </p>
               <h4 className="font-bold text-[#1E225B]">3. Educational Disclaimer</h4>
               <p>
-                While our pedagogical models are rigorously tuned and audited, GuruMera is an educational study companion. Teachers and academic institutions retain final evaluation and grading authority for all official coursework.
+                The AI tutor can make mistakes, so check important facts with your teacher or textbook. GuruMera is an educational study companion. Teachers and academic institutions retain final evaluation and grading authority for all official coursework.
               </p>
             </div>
           )}
@@ -101,16 +111,16 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
             <div className="space-y-3">
               {[
                 {
-                  q: 'Is the Public Learning Hub really 100% free?',
-                  a: 'Yes! Anyone can visit the Public Hub (/hub) immediately to explore Socratic tutoring, 2-tier flashcards, concept knowledge trees, and collaborative whiteboards without any paywall.',
+                  q: 'Is the Public Learning Hub free?',
+                  a: 'Yes, it is free to explore. Anyone can visit the Public Hub (/hub) immediately to explore Socratic tutoring, 2-tier flashcards, concept knowledge trees, and collaborative whiteboards without any paywall.',
                 },
                 {
                   q: 'How does GuruMera prevent students from cheating?',
-                  a: 'Our server-side AI Gateway uses a 5-layer defense: Layer 1 prompt-injection sanitization, Layer 2 intent classification, Layer 3 Socratic system directives, Layer 4 teacher rubric context injection, and Layer 5 real-time output verification that immediately intercepts direct solution leaks.',
+                  a: 'The tutor is instructed to guide with questions instead of answers. Messages are screened for attempts to extract answers or override its rules, and replies are checked before they reach the student. Teachers can mark the correct answer so it is blocked from appearing. No system is perfect, and teachers can review each conversation.',
                 },
                 {
                   q: 'What happens if a student uses the Public Hub and their school joins later?',
-                  a: 'Students keep 100% of their learning continuity! Simply enter your school Invite Code on your profile, and all existing flashcards, study streaks, and earned XP link seamlessly into your school roster.',
+                  a: 'Your Public Hub account stays yours. When a teacher gives you a class code, use it on the Join page to create a separate school account; your Hub progress is not moved into it.',
                 },
                 {
                   q: 'Can teachers test GuruMera before onboarding a whole school?',
@@ -142,9 +152,9 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Free Tier */}
                 <div className="border border-slate-200 rounded-2xl p-5 bg-white">
-                  <span className="text-xs font-bold text-[#249EA0] uppercase tracking-wider">Independent Learners</span>
-                  <h4 className="text-xl font-black text-[#1E225B] mt-1">Free Forever</h4>
-                  <p className="text-xs text-slate-500 mt-1 mb-4">For students, parents, and self-directed learners everywhere.</p>
+                  <span className="text-xs font-bold text-[#249EA0] uppercase tracking-wider">Individual Students</span>
+                  <h4 className="text-xl font-black text-[#1E225B] mt-1">Free</h4>
+                  <p className="text-xs text-slate-500 mt-1 mb-4">For individual students. Fair-use limits apply to AI tutor messages.</p>
                   <ul className="text-xs space-y-2 text-slate-600">
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Full Public Learning Hub access</li>
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> 2-Tier Socratic Flashcard Generator</li>
@@ -156,83 +166,36 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
 
                 {/* Institutional Tier */}
                 <div className="border-2 border-[#1E225B] rounded-2xl p-5 bg-[#FAF9F5] shadow-xs">
-                  <span className="text-xs font-bold text-[#F5921D] uppercase tracking-wider">Schools &amp; Academies</span>
-                  <h4 className="text-xl font-black text-[#1E225B] mt-1">Campus Enterprise</h4>
-                  <p className="text-xs text-slate-500 mt-1 mb-4">Complete multi-campus digital management and pedagogical safety.</p>
+                  <span className="text-xs font-bold text-[#F5921D] uppercase tracking-wider">Schools, Academies &amp; Tutors</span>
+                  <h4 className="text-xl font-black text-[#1E225B] mt-1">Schools &amp; Teachers</h4>
+                  <p className="text-xs text-slate-500 mt-1 mb-4">Contact sales for pricing: sales@gurumera.com</p>
                   <ul className="text-xs space-y-2 text-slate-600">
-                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Multi-Campus &amp; Class Roster Management</li>
+                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Classes, sections and rosters with class codes</li>
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Coursework-Linked Rubrics &amp; AI Strictness</li>
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Real-Time Teacher AI Audit Logs</li>
-                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> FERPA/COPPA Compliance Audit Trail</li>
-                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Dedicated Account Manager &amp; Onboarding</li>
+                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Parent view with result acknowledgement</li>
+                    <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Setup help by email</li>
                   </ul>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Contact Support */}
+          {/* Contact */}
           {activeModal === 'contact' && (
-            <div>
-              {contactSent ? (
-                <div className="text-center py-8 space-y-2 bg-emerald-50 rounded-2xl p-6 border border-emerald-200">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-                  <h4 className="font-bold text-emerald-900 text-base">Message Sent Successfully!</h4>
-                  <p className="text-xs text-emerald-800">
-                    Our educational partnerships team will reply to your inquiry within 1 business day.
-                  </p>
-                </div>
-              ) : (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setContactSent(true);
-                  }}
-                  className="space-y-3"
-                >
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">Your Name *</label>
-                    <input
-                      required
-                      placeholder="Jane Doe"
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">Your Work or School Email *</label>
-                    <input
-                      required
-                      type="email"
-                      placeholder="teacher@school.edu"
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">Subject / Inquiry Type</label>
-                    <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]">
-                      <option>School Onboarding &amp; Academy Deployment</option>
-                      <option>General Support / Question</option>
-                      <option>Academic Integrity &amp; Pedagogy</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1">Message *</label>
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder="Tell us about your school, student population, or question..."
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#1E225B]"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-[#1E225B] hover:bg-[#141740] text-white font-semibold py-2.5 rounded-lg text-xs transition-colors"
-                  >
-                    Submit Inquiry
-                  </button>
-                </form>
-              )}
+            <div className="space-y-3">
+              <p>
+                For school or academy pricing, a demo, or any question, email us and we will reply as soon as we can.
+              </p>
+              <a
+                href="mailto:sales@gurumera.com?subject=GuruMera%20enquiry"
+                className="inline-flex items-center gap-2 bg-[#1E225B] hover:bg-[#141740] text-white font-bold px-5 py-3 rounded-xl text-sm"
+              >
+                <Mail className="w-4 h-4" /> sales@gurumera.com
+              </a>
+              <p className="text-xs text-slate-500">
+                Please include your school or academy name, your city and roughly how many students you teach.
+              </p>
             </div>
           )}
         </div>

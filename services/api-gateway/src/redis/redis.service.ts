@@ -15,6 +15,7 @@ export class RedisService {
     key: string,
     windowMs: number,
     limit: number,
+    message?: string,
   ): Promise<void> {
     const canonicalKey = key.startsWith('quota:') ? key : `quota:${key}`;
     try {
@@ -25,18 +26,18 @@ export class RedisService {
       }
       if (count > limit) {
         throw new HttpException(
-          `AI query quota exceeded (${limit} per hour). Please try again later.`,
+          message ?? `Quota exceeded (${limit} per window). Please try again later.`,
           HttpStatus.TOO_MANY_REQUESTS,
         );
       }
     } catch (err: any) {
       if (err?.status === HttpStatus.TOO_MANY_REQUESTS) throw err;
       // Redis unavailable — use in-memory fallback
-      this.memoryQuotaCheck(canonicalKey, windowMs, limit);
+      this.memoryQuotaCheck(canonicalKey, windowMs, limit, message);
     }
   }
 
-  private memoryQuotaCheck(key: string, windowMs: number, limit: number) {
+  private memoryQuotaCheck(key: string, windowMs: number, limit: number, message?: string) {
     const now = Date.now();
     const entry = memoryStore.get(key);
     if (!entry || now - entry.windowStart > windowMs) {
@@ -45,7 +46,7 @@ export class RedisService {
     }
     if (entry.count >= limit) {
       throw new HttpException(
-        `AI query quota exceeded (${limit} per hour). Please try again later.`,
+        message ?? `Quota exceeded (${limit} per window). Please try again later.`,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }

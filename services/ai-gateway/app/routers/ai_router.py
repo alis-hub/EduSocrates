@@ -12,11 +12,12 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.guardrails.pipeline import (
-    layer1_sanitize, layer2_classify_intent, layer5_verify_output, ThreatLevel, IntentCategory
+    layer1_sanitize, layer2_classify_intent, layer5_verify_output, ThreatLevel, IntentCategory, StreamGuard
 )
 from app.pii.redactor import redact_pii
 from app.prompts.socratic_prompt import (
-    build_system_prompt, build_student_turn_message, get_answer_key_terms, SAFE_FALLBACK_RESPONSE
+    build_system_prompt, build_student_turn_message, get_answer_key_terms, SAFE_FALLBACK_RESPONSE,
+    student_message_matches_answer
 )
 from app.services.llm_provider import stream_llm_response, generate_llm_text
 from app.services import redis_client
@@ -210,6 +211,7 @@ async def chat_stream(request: ChatStreamRequest, background_tasks: BackgroundTa
         return StreamingResponse(blocked_stream(), media_type="text/event-stream")
 
     session["turn_count"] += 1
+    matches_answer = student_message_matches_answer(sanitized_message, session.get("answer_key_terms") or [])
     if (
         session.get("ai_guidance_mode") == "SOCRATIC_HINTS_ONLY"
         and session.get("hint_count", 0) >= 2
@@ -218,9 +220,10 @@ async def chat_stream(request: ChatStreamRequest, background_tasks: BackgroundTa
             sanitized_message
             + " [INSTRUCTOR CONSTRAINT: hint limit reached this cycle — redirect with a question, do not provide another hint]",
             session["turn_count"],
+            matches_answer,
         )
     else:
-        wrapped_message = build_student_turn_message(sanitized_message, session["turn_count"])
+        wrapped_message = build_student_turn_message(sanitized_message, session["turn_count"], matches_answer)
 
     message_history = session["message_history"] + [{"role": "user", "content": wrapped_message}]
     answer_key_terms = session["answer_key_terms"]
@@ -229,18 +232,23 @@ async def chat_stream(request: ChatStreamRequest, background_tasks: BackgroundTa
     async def generate_sse():
         accumulated = ""
         intercepted = False
+        guard = StreamGuard(answer_key_terms)
         try:
             async for token in stream_llm_response(system_prompt, message_history):
                 accumulated += token
-                is_safe, verified_chunk = layer5_verify_output(accumulated, answer_key_terms)
-                if not is_safe:
+                out, redirect = guard.feed(token)
+                if redirect is not None:
                     intercepted = True
                     audit_entry["response_intercepted"] = True
                     await _append_audit(session["school_id"], audit_entry)
-                    yield f"data: {json.dumps({'token': verified_chunk, 'done': False, 'intercepted': True})}\n\n"
+                    yield f"data: {json.dumps({'token': redirect, 'done': False, 'intercepted': True})}\n\n"
                     break
-                else:
-                    yield f"data: {json.dumps({'token': token, 'done': False})}\n\n"
+                if out:
+                    yield f"data: {json.dumps({'token': out, 'done': False})}\n\n"
+            if not intercepted:
+                tail = guard.flush()
+                if tail:
+                    yield f"data: {json.dumps({'token': tail, 'done': False})}\n\n"
 
             if not intercepted:
                 session["message_history"].append({"role": "user", "content": wrapped_message})
@@ -318,27 +326,39 @@ async def hub_sandbox_stream(request: HubSandboxStreamRequest):
     msgs: List[Dict[str, str]] = []
     for idx, h in enumerate(request.history[-10:]):
         r = "user" if h.get("role") in ("user", "student") else "assistant"
-        c = h.get("content", "")
+        c = str(h.get("content", ""))[:2000]
         if r == "user":
+            # Client-supplied history is untrusted: run the same checks as a live message.
+            c, _ = redact_pii(c)
+            if layer1_sanitize(c).threat_level == ThreatLevel.BLOCKED:
+                c = "[message removed by safety filter]"
             c = build_student_turn_message(c, idx + 1)
+        else:
+            # A client could forge "assistant" turns to plant instructions; keep them short and fenced.
+            c = "<previous_tutor_reply>" + c.replace("<", "&lt;").replace(">", "&gt;")[:1200] + "</previous_tutor_reply>"
         msgs.append({"role": r, "content": c})
     msgs.append({"role": "user", "content": build_student_turn_message(sanitized_message, len(msgs) + 1)})
 
     async def generate_sse():
         accumulated = ""
         intercepted = False
+        guard = StreamGuard(answer_key_terms)
         try:
             async for token in stream_llm_response(system_prompt, msgs):
                 accumulated += token
-                is_safe, verified_chunk = layer5_verify_output(accumulated, answer_key_terms)
-                if not is_safe:
+                out, redirect = guard.feed(token)
+                if redirect is not None:
                     intercepted = True
                     audit_entry["response_intercepted"] = True
                     await _append_audit(request.school_id, audit_entry)
-                    yield f"data: {json.dumps({'token': verified_chunk, 'done': False, 'intercepted': True})}\n\n"
+                    yield f"data: {json.dumps({'token': redirect, 'done': False, 'intercepted': True})}\n\n"
                     break
-                yield f"data: {json.dumps({'token': token, 'done': False})}\n\n"
+                if out:
+                    yield f"data: {json.dumps({'token': out, 'done': False})}\n\n"
             if not intercepted:
+                tail = guard.flush()
+                if tail:
+                    yield f"data: {json.dumps({'token': tail, 'done': False})}\n\n"
                 await _append_audit(request.school_id, audit_entry)
             yield f"data: {json.dumps({'done': True})}\n\n"
         except Exception:

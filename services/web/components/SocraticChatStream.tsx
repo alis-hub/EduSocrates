@@ -45,12 +45,11 @@ export default function SocraticChatStream({ sessionId, subjectId, courseworkTit
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
     try {
-      const token = localStorage.getItem('edusocrates_token') || '';
       const res = await fetch(`${API_BASE}/ai/chat/stream`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         // subjectId forwarded for per-subject rate limiting on the server
         body: JSON.stringify({ sessionId, message: userMsg, subjectId }),

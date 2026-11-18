@@ -6,7 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { DatabaseModule } from '../database/database.module';
-import { DatabaseService } from '../database/database.service';
+import { getJwtSecret } from '../common/security';
 
 @Global()
 @Module({
@@ -17,8 +17,8 @@ import { DatabaseService } from '../database/database.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET', 'dev-secret'),
-        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '1d') },
+        secret: getJwtSecret(config),
+        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '8h'), algorithm: 'HS256' },
       }),
     }),
   ],

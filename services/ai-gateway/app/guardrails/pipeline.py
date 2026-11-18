@@ -1,7 +1,8 @@
 import re
+import unicodedata
 from enum import Enum
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 class ThreatLevel(str, Enum):
     SAFE = "SAFE"
@@ -33,7 +34,9 @@ INJECTION_PATTERNS: List[Tuple[str, str]] = [
     (r"you are now\b.{0,80}(without|no)\s+restriction", "system_override"),
     (r"pretend\s+you\s+(have no|don'?t have)\s+(rule|filter|guideline|safety)", "system_override"),
     # DAN / jailbreak personas
-    (r"\bDAN\b", "jailbreak_persona"),
+    # Case-sensitive on purpose: "Dan has 5 apples" is a normal maths question.
+    (r"(?-i:\bDAN\b)", "jailbreak_persona"),
+    (r"(you are|act as|pretend to be|roleplay as)\s+dan\b", "jailbreak_persona"),
     (r"do anything now", "jailbreak_persona"),
     (r"developer mode", "jailbreak_persona"),
     (r"jailbreak", "jailbreak_persona"),
@@ -42,6 +45,20 @@ INJECTION_PATTERNS: List[Tuple[str, str]] = [
     (r"(just|simply|please|only)?\s*(give|tell|provide|show)\s+me\s+(the\s+)?(correct|right|final)?\s*(answer|solution|result)\b", "direct_answer"),
     (r"what is the answer (to|for) (question|problem|q)?\s*\d+", "direct_answer"),
     (r"solve (question|problem|task|q)\s*\d+\s+for me", "direct_answer"),
+    # Roman Urdu answer fishing
+    (r"(seedha|seedhe)\s+(jawab|jawaab|answer|hal)", "direct_answer"),
+    (r"(jawab|jawaab|answer|hal|solution)\s+(bata|batao|bta|btao|de|do)\s*(do|dein|den|dijiye|dena)?\b", "direct_answer"),
+    (r"(homework|assignment|sawal|sawaal)\s+(kar|hal\s+kar)\s*(do|dein|dena|den)\b", "direct_answer"),
+    # Roman Urdu overrides / prompt exposure
+    (r"(pichl[ei]|purani|sab|saari|sari|tamam)\s+(hidayat|hidayaat|instructions?|rules?|ehkam|ahkam)\s+(ko\s+)?(bhool|bhul|nazar\s*andaz|ignore)", "system_override"),
+    (r"(rules?|instructions?|hidayat|hidayaat)\s+(ko\s+)?(bhool|bhul|nazar\s*andaz)\s*(jao|karo|kar\s*do|do)", "system_override"),
+    (r"(apni|system)\s+(instructions?|hidayat|hidayaat|prompt)\s+(batao|bata\s*do|dikhao|dikha\s*do|show)", "prompt_exposure"),
+    # Urdu script: answer fishing, overrides, prompt exposure
+    (r"(سیدھا|سیدھے)\s*(جواب|حل)", "direct_answer"),
+    (r"(جواب|حل)\s*(بتا|بتاؤ|بتاو|بتائیں|بتایئے|دو|دیں|دے\s*دو|بتا\s*دو)", "direct_answer"),
+    (r"(ہوم\s*ورک|اسائنمنٹ|سوال)\s*(حل\s*)?(کر)\s*(دو|دیں|دے)", "direct_answer"),
+    (r"(پچھلی|پچھلے|تمام|سب|ساری)\s*(ہدایات|احکامات|اصول|قواعد)\s*(کو\s*)?(بھول|نظر\s*انداز|چھوڑ)", "system_override"),
+    (r"(اپنی|سسٹم)\s*(ہدایات|پرامپٹ|پرومپٹ)\s*(بتاؤ|بتاو|دکھاؤ|دکھاو|ظاہر)", "prompt_exposure"),
     # Base64 encoded payloads (commonly smuggled instructions)
     (r"base64\s*(decode|encode)", "encoded_payload"),
     (r"[A-Za-z0-9+/]{30,}={0,2}", "long_base64"),
@@ -62,6 +79,22 @@ _INJECTION_COMPILED = [(re.compile(p, re.IGNORECASE), label) for p, label in INJ
 _ANSWER_COMPILED = [(re.compile(p, re.IGNORECASE), label) for p, label in ANSWER_EXTRACTOR_PATTERNS]
 
 
+# Arabic-Indic (٠-٩) and Extended Arabic-Indic / Urdu (۰-۹) digits -> ASCII, so "۴۲" matches an answer of "42".
+_DIGIT_MAP = {**{0x0660 + i: 0x30 + i for i in range(10)}, **{0x06F0 + i: 0x30 + i for i in range(10)}}
+
+
+def ascii_digits(text: str) -> str:
+    return text.translate(_DIGIT_MAP)
+
+
+def normalize_input(text: str) -> str:
+    """Defeat trivial obfuscation before pattern matching: Unicode compatibility forms
+    (full-width letters etc.), zero-width / invisible format characters, odd whitespace."""
+    text = ascii_digits(unicodedata.normalize("NFKC", text))
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def layer1_sanitize(text: str) -> GuardrailResult:
     """
     Layer 1: Pre-Sanitization & Pattern Matching.
@@ -71,6 +104,7 @@ def layer1_sanitize(text: str) -> GuardrailResult:
     matched: List[str] = []
     threat = ThreatLevel.SAFE
     intent = IntentCategory.EDUCATIONAL
+    text = normalize_input(text)
 
     for pattern, label in _INJECTION_COMPILED:
         if pattern.search(text):
@@ -111,8 +145,8 @@ EDUCATIONAL_KEYWORDS = [
 ]
 
 EXPLOIT_KEYWORDS = [
-    "answer key", "mark scheme", "model answer", "cheat", "hack",
-    "exam answer", "leak", "bypass", "copy", "plagiarize",
+    "answer key", "mark scheme", "model answer", "cheat on", "cheat in",
+    "exam answers", "leaked exam", "bypass the", "plagiarize",
 ]
 
 
@@ -153,12 +187,29 @@ _NAKED_ANSWER_PATTERN = _re.compile(
 
 
 
+_FORMAT_NOISE = re.compile(r"[\s,_*`'\"\u00a0]+")
+
+
+def _squash(text: str) -> str:
+    """Lowercase, NFKC and drop spacing/markdown noise so '3 / 5', '3/5' and '**3/5**' all match."""
+    return _FORMAT_NOISE.sub("", ascii_digits(unicodedata.normalize("NFKC", text)).lower())
+
+
+def _term_in_text(term: str, text: str, squashed_text: str) -> bool:
+    t = _squash(term)
+    if not t:
+        return False
+    if len(t) < 3:
+        # Very short answers ("5", "x") only count as whole tokens, or every reply would be blocked.
+        return re.search(r"(?<![\w.])" + re.escape(term.strip()) + r"(?![\w.])", text, re.IGNORECASE) is not None
+    return t in squashed_text
+
+
 def layer5_verify_output(response_chunk: str, answer_key_terms: List[str]) -> Tuple[bool, str]:
     """
-    Layer 5: Real-time output verification.
-    Scans accumulated LLM response chunk against known answer key terms,
-    full solution code blocks, and naked final-answer patterns.
-    If any direct answer signal is detected, intercept and return a safe Socratic redirect.
+    Layer 5: output verification.
+    Scans the accumulated LLM response for teacher answer-key terms (tolerant of spacing and
+    markdown formatting), full solution code blocks, and naked final-answer patterns.
     Returns (is_safe, safe_response_or_chunk).
     """
     redirect = (
@@ -167,17 +218,48 @@ def layer5_verify_output(response_chunk: str, answer_key_terms: List[str]) -> Tu
         "can you identify the first principle that might apply to this problem? "
         "Walk me through your initial reasoning. 🔍"
     )
-    lowered = response_chunk.lower()
-    # Check teacher answer key terms
+    squashed = _squash(response_chunk)
     for term in answer_key_terms:
-        if term.lower() in lowered:
+        if _term_in_text(term, response_chunk, squashed):
             return False, redirect
-    # Check for full solution code blocks
     if _CODE_BLOCK_PATTERN.search(response_chunk):
         return False, redirect
-    # Check for naked final answer patterns (only trigger if answer_key_terms present)
-    # Only intercept if we also have an answer_key_term or the response ends abruptly
     if answer_key_terms and _NAKED_ANSWER_PATTERN.search(response_chunk):
         return False, redirect
     return True, response_chunk
 
+
+class StreamGuard:
+    """Releases streamed text only after it has been checked.
+
+    The old loop yielded each token as soon as it arrived, so an answer split across tokens
+    ("3", "/", "5") was partly on its way to the student before the filter could see all of it.
+    StreamGuard holds back the tail of the stream (longer than any answer-key term) and any
+    unfinished code block, and only releases text that can no longer become part of a leak.
+    """
+
+    def __init__(self, answer_key_terms: List[str]):
+        self.terms = answer_key_terms
+        self.buf = ""
+        self.released = 0
+        longest = max((len(t) for t in answer_key_terms), default=0)
+        self.holdback = min(longest * 2 + 8, 300) if answer_key_terms else 0
+
+    def feed(self, token: str) -> Tuple[Optional[str], Optional[str]]:
+        """Returns (text_to_send, redirect). If redirect is not None the stream must stop."""
+        self.buf += token
+        ok, msg = layer5_verify_output(self.buf, self.terms)
+        if not ok:
+            return None, msg
+        upto = max(self.released, len(self.buf) - self.holdback)
+        if self.buf.count("```") % 2 == 1:  # inside an unfinished code block: keep it back
+            upto = min(upto, self.buf.rfind("```"))
+            upto = max(upto, self.released)
+        out = self.buf[self.released:upto]
+        self.released = upto
+        return out, None
+
+    def flush(self) -> str:
+        out = self.buf[self.released:]
+        self.released = len(self.buf)
+        return out

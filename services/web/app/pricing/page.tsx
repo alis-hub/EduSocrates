@@ -43,10 +43,10 @@ export default function PricingPage() {
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#1E225B] tracking-tight mb-4">
-            Transparent, Simple Plans for Every Learning Stage
+            Free for students. Simple pricing for schools.
           </h1>
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Free forever for self-directed public learners. Powerful, compliant multi-campus infrastructure for schools and academies.
+            Individual students learn for free. Schools, academies and tuition teachers: email us for pricing.
           </p>
         </div>
 
@@ -56,14 +56,14 @@ export default function PricingPage() {
           <div className="bg-white border border-slate-200/90 rounded-2xl p-8 shadow-xs hover:shadow-lg transition-all flex flex-col justify-between">
             <div>
               <div className="inline-block text-xs font-bold text-[#249EA0] uppercase tracking-wider bg-teal-50 border border-teal-200 px-3 py-1 rounded-full mb-3">
-                Independent Learners
+                Individual Students
               </div>
-              <h2 className="text-2xl font-black text-[#1E225B]">Free Forever</h2>
+              <h2 className="text-2xl font-black text-[#1E225B]">Free</h2>
               <div className="text-3xl font-extrabold text-[#1E225B] mt-2 mb-1">
-                $0 <span className="text-xs text-slate-400 font-normal">/ month</span>
+                Rs 0 <span className="text-xs text-slate-400 font-normal">for individual students</span>
               </div>
               <p className="text-xs text-slate-600 mb-6">
-                No credit card required. Explore Socratic discovery and study tools anytime.
+                No payment details needed. Fair-use limits apply to AI tutor messages.
               </p>
 
               <ul className="space-y-3 text-xs text-slate-700">
@@ -85,11 +85,11 @@ export default function PricingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Continuous Study Streaks &amp; XP Preservation</span>
+                  <span>Study streaks and XP</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Seamless school linking via Invite Code</span>
+                  <span>Join a teacher's class with a class code</span>
                 </li>
               </ul>
             </div>
@@ -106,55 +106,55 @@ export default function PricingPage() {
 
           {/* Academy Enterprise Tier */}
           <div className="bg-white border-2 border-[#1E225B] rounded-2xl p-8 shadow-md relative flex flex-col justify-between">
-            <div className="absolute -top-3.5 right-6 bg-[#1E225B] text-white text-[11px] font-bold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-sm">
-              Most Popular for Academies
-            </div>
             <div>
               <div className="inline-block text-xs font-bold text-[#F5921D] uppercase tracking-wider bg-[#F5921D]/10 border border-[#F5921D]/30 px-3 py-1 rounded-full mb-3">
-                Schools &amp; Academies
+                Schools, Academies &amp; Tuition Teachers
               </div>
-              <h2 className="text-2xl font-black text-[#1E225B]">Campus Enterprise</h2>
+              <h2 className="text-2xl font-black text-[#1E225B]">For Schools &amp; Teachers</h2>
               <div className="text-3xl font-extrabold text-[#1E225B] mt-2 mb-1">
-                Custom <span className="text-xs text-slate-400 font-normal">/ annual seat licensing</span>
+                Contact sales <span className="text-xs text-slate-400 font-normal">for pricing</span>
               </div>
               <p className="text-xs text-slate-600 mb-6">
-                Turnkey institutional tenant setup with full administrative control &amp; audit logging.
+                Set up your school or class in a minute, then email us to agree pricing for your students.
               </p>
 
               <ul className="space-y-3 text-xs text-slate-700">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Multi-Campus, Class &amp; Section Roster Management</span>
+                  <span>Classes, sections and rosters with simple class codes</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Coursework-Linked Rubrics &amp; AI Strictness Enforcement</span>
+                  <span>Coursework with rubrics and AI strictness settings</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Real-Time Teacher Transcript &amp; AI Audit Logging</span>
+                  <span>Teachers can review AI conversations; every view is logged</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>FERPA &amp; COPPA Guaranteed Compliance Isolation</span>
+                  <span>Each school's data kept separate from every other school's</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Single Sign-On (Google &amp; LinkedIn / SAML)</span>
+                  <span>Parent view with result acknowledgement</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Dedicated EdTech Deployment Engineer &amp; SLA Support</span>
+                  <span>Support by email</span>
                 </li>
               </ul>
             </div>
 
             <div className="mt-8 pt-6 border-t border-slate-100">
-              <Link
-                href="/schools"
+              <a
+                href="mailto:sales@gurumera.com?subject=GuruMera%20pricing%20enquiry"
                 className="w-full inline-flex items-center justify-center gap-2 bg-[#1E225B] hover:bg-[#141740] text-white font-bold py-3 rounded-xl text-sm transition-all shadow-md"
               >
-                <GraduationCap className="w-4 h-4" /> Onboard Your School
+                <GraduationCap className="w-4 h-4" /> Email sales@gurumera.com
+              </a>
+              <Link href="/start/school" className="block text-center text-xs text-[#1E225B] font-semibold mt-3 hover:underline">
+                Or set up your school or class first
               </Link>
             </div>
           </div>
@@ -170,13 +170,13 @@ export default function PricingPage() {
             <div>
               <h4 className="font-bold text-[#1E225B]">Can teachers test the platform before committing?</h4>
               <p className="mt-1 text-slate-600 leading-relaxed">
-                Yes! We offer a zero-signup 2-hour ephemeral sandbox at /try-teacher where teachers can test rubrics and watch how the Socratic AI blocks cheating.
+                Yes. The teacher demo at /try-teacher needs no signup, so you can try setting coursework and see how the tutor responds to students.
               </p>
             </div>
             <div>
-              <h4 className="font-bold text-[#1E225B]">How does pricing scale for large multi-campus academies?</h4>
+              <h4 className="font-bold text-[#1E225B]">How much does it cost for a school or academy?</h4>
               <p className="mt-1 text-slate-600 leading-relaxed">
-                Our Campus Enterprise tier includes volume discounts based on student headcount, including parent portals and administrative oversight at no extra cost.
+                Pricing depends on the size of your school or class. Email sales@gurumera.com with your school name and number of students and we will reply with a quote.
               </p>
             </div>
           </div>

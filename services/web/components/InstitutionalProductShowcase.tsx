@@ -172,22 +172,22 @@ export function InstitutionalProductShowcase() {
 
                 <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
                   <div className="flex items-center justify-between text-slate-500 text-xs mb-1">
-                    <span>Certified Faculty</span>
+                    <span>Faculty</span>
                     <BookOpen className="w-4 h-4 text-[#F5921D]" />
                   </div>
                   <div className="text-2xl font-extrabold text-[#1E225B]">
                     {selectedCampus === 'north' ? '32' : selectedCampus === 'south' ? '16' : '48'}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-1">100% Socratic Certified</div>
+                  <div className="text-[11px] text-slate-500 mt-1">Socratic guidance on</div>
                 </div>
 
                 <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
                   <div className="flex items-center justify-between text-slate-500 text-xs mb-1">
-                    <span>FERPA / COPPA Audit</span>
+                    <span>Sample metric</span>
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   </div>
-                  <div className="text-2xl font-extrabold text-emerald-600">98.4%</div>
-                  <div className="text-[11px] text-emerald-700 mt-1">Zero answer-key leaks</div>
+                  <div className="text-2xl font-extrabold text-emerald-600">—</div>
+                  <div className="text-[11px] text-emerald-700 mt-1">Demo data</div>
                 </div>
 
                 <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">

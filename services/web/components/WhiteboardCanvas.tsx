@@ -67,6 +67,7 @@ export function WhiteboardCanvas({
 
   useEffect(() => {
     let closed = false;
+    // The browser sends the HttpOnly session cookie with the WebSocket handshake.
     const wsUrl = `${getWsBaseUrl()}/whiteboard/${roomId}?name=${encodeURIComponent(userName)}`;
     try {
       const ws = new WebSocket(wsUrl);

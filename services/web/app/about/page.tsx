@@ -307,9 +307,9 @@ export default function AboutPage() {
 
               <div className="p-5 rounded-2xl bg-[#FAF9F5] border border-[#E7E3D8]">
                 <Lock className="w-6 h-6 text-[#F5921D] mb-3" />
-                <h4 className="font-bold text-sm text-[#1E225B] mb-1.5">FERPA &amp; COPPA Compliant</h4>
+                <h4 className="font-bold text-sm text-[#1E225B] mb-1.5">Your school's data stays separate</h4>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Student data is never used to train public foundation models, never sold to advertisers, and strictly isolated via multi-tenant Row-Level Security.
+                  Each school's data is kept apart from every other school's at the database level. We do not sell student data or show ads.
                 </p>
               </div>
 
@@ -361,7 +361,7 @@ export default function AboutPage() {
               </div>
               <h3 className="font-bold text-[#1E225B] text-base">AI Safety &amp; Engineering</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Engineers specializing in multi-tier LLM guardrails, latency optimization, and defense against adversarial prompt injections.
+                Engineers specializing in multi-layer AI guardrails, latency optimization, and defense against adversarial prompt injections.
               </p>
             </div>
 

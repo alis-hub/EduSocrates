@@ -1,0 +1,64 @@
+# Render Blueprint for GuruMera: API gateway, AI gateway (private) and Redis.
+# The web app is deployed on Vercel; the database is Neon. See docs/PRODUCTION_CUTOVER.md.
+# Values marked "sync: false" are asked for once in the Render dashboard; they are never stored in git.
+
+services:
+  - type: web
+    name: gurumera-api
+    runtime: node
+    plan: starter            # the free plan sleeps when idle, which breaks sign-in and live whiteboards
+    region: frankfurt        # pick the region closest to your Neon database and to Pakistan
+    rootDir: services/api-gateway
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/main.js
+    healthCheckPath: /api/v1/health
+    autoDeploy: false        # deploy deliberately, after the database step in the cut-over guide
+    envVars:
+      - { key: NODE_VERSION, value: 22 }
+      - { key: NODE_ENV, value: production }
+      - { key: TRUST_PROXY, value: "1" }
+      - { key: DATABASE_URL, sync: false }          # Neon owner connection string
+      - { key: DATABASE_APP_URL, sync: false }      # Neon connection string for the restricted gurumera_app role
+      - { key: JWT_SECRET, generateValue: true }
+      - { key: REDIS_URL, fromService: { type: keyvalue, name: gurumera-redis, property: connectionString } }
+      - { key: AI_GATEWAY_URL, value: "http://gurumera-ai:10000" }
+      - { key: AI_GATEWAY_API_KEY, sync: false }    # same value as on gurumera-ai
+      - { key: CORS_ORIGINS, value: "https://gurumera.com,https://www.gurumera.com" }
+      - { key: COOKIE_DOMAIN, value: ".gurumera.com" }
+      - { key: APP_BASE_URL, value: "https://gurumera.com" }
+      - { key: GOOGLE_CLIENT_ID, sync: false }
+      - { key: BREVO_API_KEY, sync: false }
+      - { key: EMAIL_FROM, value: "no-reply@gurumera.com" }
+      - { key: EMAIL_FROM_NAME, value: "GuruMera" }
+      - { key: ENABLE_DEMO_MODE, value: "false" }
+      - { key: HUB_GLOBAL_DAILY_AI_LIMIT, value: "3000" }
+      - { key: STUDENT_HOURLY_AI_LIMIT, value: "40" }
+      - { key: SCHOOL_DAILY_AI_LIMIT, value: "6000" }
+      - { key: TUTOR_DAILY_AI_LIMIT, value: "1500" }
+
+  - type: pserv              # private: reachable only from other Render services, never from the internet
+    name: gurumera-ai
+    runtime: python
+    plan: starter
+    region: frankfurt
+    rootDir: services/ai-gateway
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
+    autoDeploy: false
+    envVars:
+      - { key: PYTHON_VERSION, value: 3.12.8 }
+      - { key: ENVIRONMENT, value: production }
+      - { key: AI_GATEWAY_API_KEY, sync: false }    # same value as on gurumera-api
+      - { key: AES_ENCRYPTION_KEY, generateValue: true }
+      - { key: REDIS_URL, fromService: { type: keyvalue, name: gurumera-redis, property: connectionString } }
+      - { key: DEFAULT_PROVIDER, value: gemini }    # or openai; "mock" returns canned replies
+      - { key: GEMINI_API_KEY, sync: false }
+      - { key: OPENAI_API_KEY, sync: false }
+      - { key: LLM_TEMPERATURE, value: "0.3" }
+
+  - type: keyvalue           # Redis: rate limits, AI sessions, revoked sessions
+    name: gurumera-redis
+    plan: starter
+    region: frankfurt
+    maxmemoryPolicy: noeviction
+    ipAllowList: []          # internal connections only

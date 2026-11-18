@@ -5,9 +5,9 @@ import {
   api,
   getApiBaseUrl,
   getStoredUser,
-  getToken,
   logout,
 } from '@/lib/api';
+import { GoogleSignInButton, googleSignInEnabled } from '@/components/GoogleSignInButton';
 import { KaTeXMath } from '@/components/KaTeXMath';
 import { MathGraphPlayground } from '@/components/MathGraphPlayground';
 import { BrandLogo } from '@/components/BrandLogo';
@@ -250,12 +250,11 @@ export default function PublicLearningHubPage() {
     payload: Record<string, any>,
     onToken: (tok: string) => void,
   ): Promise<boolean> {
-    const token = getToken();
     const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(payload),
     });
@@ -598,22 +597,10 @@ export default function PublicLearningHubPage() {
     }
   };
 
-  const handleRedeemInvite = async (e: React.FormEvent) => {
+  // Hub learners stay independent; a class code creates a separate school account on the join page.
+  const handleRedeemInvite = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!requireAccountForSave()) return;
-    setInviteBusy(true);
-    try {
-      const res = await api.redeemInvite(inviteCode);
-      setInviteModalOpen(false);
-      showToast(`Joined ${res.schoolName}! Redirecting to your Student Dashboard...`);
-      setTimeout(() => {
-        window.location.href = '/student';
-      }, 900);
-    } catch (err: any) {
-      showToast('Error: ' + err.message);
-    } finally {
-      setInviteBusy(false);
-    }
+    window.location.href = `/join?code=${encodeURIComponent(inviteCode.trim())}`;
   };
 
   return (
@@ -858,7 +845,7 @@ export default function PublicLearningHubPage() {
                   <div>
                     <div className="font-semibold text-sm text-slate-900">{topic}</div>
                     <div className="text-xs text-slate-500">
-                      {level.replace('_', ' ')} · {mode.replace('_', ' ')} · 5-Layer Guardrailed
+                      {level.replace('_', ' ')} · {mode.replace('_', ' ')} · Guardrailed
                     </div>
                   </div>
                 </div>
@@ -895,7 +882,7 @@ export default function PublicLearningHubPage() {
                     </span>
                   </div>
                   <span className="text-[10px] font-bold text-slate-500 bg-white/80 px-2 py-0.5 rounded-full border border-slate-200 shrink-0">
-                    5-Layer Guardrailed · Zero Answer Leaks
+                    Guardrailed Socratic tutor
                   </span>
                 </div>
 
@@ -1848,36 +1835,29 @@ export default function PublicLearningHubPage() {
                 • <strong>What counts:</strong> Interactive prompts to the Socratic AI Tutor &amp; Code Debugger (3 queries allowed per 24 hours).
               </p>
               <p className="text-[11px] leading-relaxed">
-                • <strong>What is unlimited:</strong> Knowledge Maps, Public Flashcards, Practice Quizzes, STEM Grapher, and Discussions are 100% free with no limit.
+                • <strong>What is unlimited:</strong> Knowledge Maps, Public Flashcards, Practice Quizzes, STEM Grapher, and Discussions are free to use.
               </p>
               <p className="text-[11px] leading-relaxed">
                 • <strong>Reset time:</strong> Allowance resets every 24 hours, or create a free account right now to continue immediately.
               </p>
             </div>
 
-            {/* Google SSO One-Click Action */}
-            <button
-              type="button"
-              onClick={async () => {
-                await api.ssoLogin({
-                  provider: 'google',
-                  email: 'samira.learner@gmail.com',
-                  firstName: 'Samira',
-                  lastName: 'Learner',
-                });
-                window.location.reload();
-              }}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-300 shadow-xs transition-all text-xs sm:text-sm"
-            >
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-              <span>Sign up with Google</span>
-            </button>
+            {/* Google sign-in (verified server-side) */}
+            {googleSignInEnabled && (
+              <GoogleSignInButton
+                text="signup_with"
+                onCredential={async (idToken) => {
+                  try {
+                    await api.ssoLogin({ provider: 'google', idToken });
+                    window.location.reload();
+                  } catch (err: any) {
+                    alert(err?.message || 'Google sign-in failed.');
+                  }
+                }}
+              />
+            )}
 
+            {googleSignInEnabled && (
             <div className="relative my-3 flex items-center justify-center">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-slate-200" />
@@ -1886,6 +1866,7 @@ export default function PublicLearningHubPage() {
                 — OR WITH EMAIL —
               </span>
             </div>
+            )}
 
             <form onSubmit={handleQuickSignup} className="space-y-2.5">
               <div className="grid grid-cols-2 gap-2">

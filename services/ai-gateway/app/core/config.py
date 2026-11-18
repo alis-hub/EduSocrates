@@ -16,8 +16,13 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
     
+    ENVIRONMENT: str = "development"
+    # Shared secret the API gateway must send as X-Internal-Key.
+    AI_GATEWAY_API_KEY: Optional[str] = None
+
     # Security & Encryption
-    AES_ENCRYPTION_KEY: str = "edusocrates-aes256-secret-key-32b"
+    # No default: a known key in source control is no encryption. See core/auth.validate_security_config.
+    AES_ENCRYPTION_KEY: Optional[str] = None
     
     class Config:
         env_file = ".env"

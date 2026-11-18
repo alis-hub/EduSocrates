@@ -54,7 +54,7 @@ const FEATURES = [
     description:
       'Unlike answer-generator chatbots that create a cognitive bypass, GuruMera’s Socratic AI Tutor guides students using progressive diagnostic inquiries, physical analogies, and multi-tier hints to derive solutions themselves.',
     highlights: [
-      'Zero direct-answer leak guarantee',
+      'Designed not to hand out answers',
       'Prompt-injection shielded against cheating',
       'Step-by-step diagnostic misconception isolation',
       'LaTeX math derivations and code debugging',

@@ -18,18 +18,13 @@ export function getWsBaseUrl(): string {
   return API_BASE;
 }
 
-export function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('edusocrates_token');
-}
-
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+  // The session lives in an HttpOnly cookie that the browser attaches; scripts never hold the token.
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
   });
@@ -40,34 +35,20 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   return res.json();
 }
 
-/** Set auth cookie readable by Next.js middleware (edge runtime). */
-function setAuthCookie(token: string) {
-  if (typeof document === 'undefined') return;
-  const maxAge = 60 * 60 * 24; // 1 day in seconds
-  document.cookie = `edusocrates_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
-}
-
-/** Clear the auth cookie. */
-function clearAuthCookie() {
-  if (typeof document === 'undefined') return;
-  document.cookie = 'edusocrates_token=; path=/; max-age=0; SameSite=Lax';
-}
-
-export function setStoredAuth(accessToken: string, user: any) {
+/** Remember who is signed in (name, role) for display. This is not a credential. */
+export function setStoredAuth(_accessToken: string | undefined, user: any) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('edusocrates_token', accessToken);
   localStorage.setItem('edusocrates_user', JSON.stringify(user));
-  setAuthCookie(accessToken);
 }
 
 export const api = {
   // ── Auth ──────────────────────────────────────────────────────────────── //
-  login: async (email: string, password: string, mfaCode?: string) => {
+  login: async (email: string, password: string, mfaCode?: string, schoolId?: string) => {
     const res = await apiFetch<any>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password, ...(mfaCode ? { mfaCode } : {}) }),
+      body: JSON.stringify({ email, password, ...(mfaCode ? { mfaCode } : {}), ...(schoolId ? { schoolId } : {}) }),
     });
-    if (res.accessToken) {
+    if (res.user) {
       setStoredAuth(res.accessToken, res.user);
     }
     return res;
@@ -78,7 +59,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ tempToken, code }),
     });
-    if (res.accessToken) {
+    if (res.user) {
       setStoredAuth(res.accessToken, res.user);
     }
     return res;
@@ -90,6 +71,19 @@ export const api = {
       body: JSON.stringify({ email }),
     });
   },
+
+  resetPassword: (token: string, password: string) =>
+    apiFetch<{ success: boolean; message: string }>('/auth/reset-password', {
+      method: 'POST', body: JSON.stringify({ token, password }),
+    }),
+
+  verifyEmail: (token: string) =>
+    apiFetch<{ success: boolean; message: string }>('/auth/verify-email', {
+      method: 'POST', body: JSON.stringify({ token }),
+    }),
+
+  resendVerification: () =>
+    apiFetch<{ success: boolean; message: string }>('/auth/resend-verification', { method: 'POST' }),
 
   publicSignup: async (data: {
     email: string;
@@ -105,20 +99,30 @@ export const api = {
     return res;
   },
 
-  ssoLogin: async (data: {
-    provider: 'google' | 'linkedin' | 'microsoft';
-    email: string;
-    firstName?: string;
-    lastName?: string;
-  }) => {
-    const res = await apiFetch<{ accessToken: string; user: any; tenantRouted?: boolean }>(
-      '/auth/sso',
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      },
-    );
+  /** Google sign-in. `idToken` is the credential returned by Google Identity Services; the server verifies it. */
+  ssoLogin: async (data: { provider: 'google'; idToken: string }) => {
+    const res = await apiFetch<{ accessToken: string; user: any }>('/auth/sso', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
     setStoredAuth(res.accessToken, res.user);
+    return res;
+  },
+
+  /** Administrator authenticator-app enrolment, step 1: get a secret for the app. */
+  mfaSetupStart: (tempToken: string) =>
+    apiFetch<{ secret: string; otpauthUrl: string; expiresInSeconds: number }>('/auth/mfa/setup', {
+      method: 'POST',
+      body: JSON.stringify({ tempToken }),
+    }),
+
+  /** Step 2: confirm with a code from the app; signs the administrator in. */
+  mfaSetupConfirm: async (tempToken: string, code: string) => {
+    const res = await apiFetch<{ accessToken: string; user: any }>('/auth/mfa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ tempToken, code }),
+    });
+    if (res.user) setStoredAuth(res.accessToken, res.user);
     return res;
   },
 
@@ -129,36 +133,55 @@ export const api = {
   },
 
   revokeOtherSessions: async () => {
-    return apiFetch<{ success: boolean; message: string }>('/auth/sessions/revoke-others', {
-      method: 'POST',
-    });
-  },
-
-  redeemInvite: async (inviteCode: string) => {
-    const res = await apiFetch<{ accessToken: string; user: any; schoolName: string }>(
-      '/auth/redeem-invite',
-      {
-        method: 'POST',
-        body: JSON.stringify({ inviteCode }),
-      },
+    const res = await apiFetch<{ success: boolean; message: string; accessToken?: string; user?: any }>(
+      '/auth/sessions/revoke-others',
+      { method: 'POST' },
     );
-    setStoredAuth(res.accessToken, res.user);
+    // The server signs out every other device and gives this one a fresh token.
+    if (res.user) setStoredAuth(res.accessToken, res.user);
     return res;
   },
 
-  register: (data: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    schoolId: string;
-    campusId?: string;
-  }) =>
-    apiFetch<{ id: string }>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  // ── Onboarding & class codes ──────────────────────────────────────────── //
+  /** A school creates its own workspace. The administrator then signs in and sets up an authenticator app. */
+  createSchool: (data: {
+    schoolName: string; city?: string;
+    adminFirstName: string; adminLastName: string; adminEmail: string; adminPassword: string;
+  }) => apiFetch<any>('/onboarding/school', { method: 'POST', body: JSON.stringify(data) }),
+
+  /** An independent teacher / academy creates a workspace with a first class. Signs them in. */
+  createTutor: async (data: {
+    firstName: string; lastName: string; email: string; password: string;
+    academyName: string; className: string; gradeLevel: number; subjectName: string;
+    sectionName?: string; campusName?: string; city?: string;
+  }) => {
+    const res = await apiFetch<any>('/onboarding/tutor', { method: 'POST', body: JSON.stringify(data) });
+    if (res.user) setStoredAuth(res.accessToken, res.user);
+    return res;
+  },
+
+  /** A new student creates an account in the class's school using a class code. */
+  joinClass: async (data: { code: string; firstName: string; lastName: string; email: string; password: string }) => {
+    const res = await apiFetch<any>('/join/class', { method: 'POST', body: JSON.stringify(data) });
+    if (res.user) setStoredAuth(res.accessToken, res.user);
+    return res;
+  },
+
+  /** An existing student adds another class from the same school. */
+  joinAnotherClass: (code: string) =>
+    apiFetch<any>('/student/join-class', { method: 'POST', body: JSON.stringify({ code }) }),
+
+  teacherClasses: {
+    list: () => apiFetch<any[]>('/teacher/classes'),
+    capabilities: () => apiFetch<{ canCreate: boolean }>('/teacher/classes/capabilities'),
+    create: (data: { className: string; gradeLevel: number; subjectName: string; sectionName?: string; campusName?: string }) =>
+      apiFetch<any>('/teacher/classes', { method: 'POST', body: JSON.stringify(data) }),
+    rotateCode: (sectionId: string) => apiFetch<any>(`/teacher/classes/${sectionId}/join-code`, { method: 'POST' }),
+    revokeCode: (sectionId: string) => apiFetch<any>(`/teacher/classes/${sectionId}/join-code`, { method: 'DELETE' }),
+    students: (sectionId: string) => apiFetch<any[]>(`/teacher/classes/${sectionId}/students`),
+    removeStudent: (sectionId: string, studentId: string) =>
+      apiFetch<any>(`/teacher/classes/${sectionId}/students/${studentId}`, { method: 'DELETE' }),
+  },
 
   // ── Admin — Campuses ──────────────────────────────────────────────────── //
   getCampuses: () => apiFetch<any[]>('/admin/campuses'),
@@ -283,6 +306,12 @@ export const api = {
   /** Returns read-only coursework+grades for a specific child (parent must be linked). */
   getChildCoursework: (studentId: string) =>
     apiFetch<any[]>(`/parent/children/${studentId}/coursework`),
+  /** Parent confirms they have reviewed a graded result. */
+  acknowledgeResult: (studentId: string, submissionId: string, note?: string) =>
+    apiFetch<any>(`/parent/children/${studentId}/submissions/${submissionId}/acknowledge`, {
+      method: 'POST',
+      body: JSON.stringify(note ? { note } : {}),
+    }),
   /** Returns rich academic overview, KPIs, and alerts for a specific child. */
   getChildOverview: (studentId: string) =>
     apiFetch<any>(`/parent/children/${studentId}/overview`),
@@ -367,36 +396,6 @@ export const api = {
       campusCity: string;
       roleType: string;
     }) => apiFetch('/leads/school-inquiry', { method: 'POST', body: JSON.stringify(data) }),
-    onboardingWizard: async (data: {
-      schoolName: string;
-      domain?: string;
-      adminEmail: string;
-      adminPassword: string;
-      adminFirstName: string;
-      adminLastName: string;
-      campusName: string;
-      campusCity: string;
-      className: string;
-      academicYear?: string;
-      sectionName?: string;
-      subjectName: string;
-      inviteCode?: string;
-      secondaryCampusName?: string;
-      secondaryCampusCity?: string;
-      brandingColor?: string;
-      subdomain?: string;
-      aiGuidanceMode?: string;
-      retentionPolicy?: string;
-      ssoGoogle?: boolean;
-      ssoMicrosoft?: boolean;
-    }) => {
-      const res = await apiFetch<{ accessToken: string; user: any; provisioned: any }>(
-        '/onboarding/wizard',
-        { method: 'POST', body: JSON.stringify(data) },
-      );
-      setStoredAuth(res.accessToken, res.user);
-      return res;
-    },
 
     // Try-as-a-Teacher Sandbox
     startTeacherSandbox: () => apiFetch<any>('/sandbox/teacher/start', { method: 'POST' }),
@@ -521,11 +520,6 @@ export const api = {
 
     // Gamification
     getGamificationProfile: () => apiFetch<any>('/hub/gamification/profile'),
-    recordActivity: (xpDelta = 10, badgeCode?: string) =>
-      apiFetch<any>('/hub/gamification/record-activity', {
-        method: 'POST',
-        body: JSON.stringify({ xpDelta, badgeCode }),
-      }),
   },
 };
 
@@ -536,9 +530,10 @@ export function getStoredUser() {
   return raw ? JSON.parse(raw) : null;
 }
 
-export function logout() {
-  localStorage.removeItem('edusocrates_token');
+export async function logout() {
   localStorage.removeItem('edusocrates_user');
-  clearAuthCookie();
+  try {
+    await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+  } catch { /* the cookie also expires on its own */ }
   window.location.href = '/login';
 }

@@ -233,19 +233,19 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-around gap-6 text-xs md:text-sm font-semibold text-slate-600">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-[#249EA0]" />
-            <span>Built for FERPA &amp; COPPA Compliance</span>
+            <span>Private workspace for every school</span>
           </div>
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#F5921D]" />
-            <span>Powered by Google Gemini AI</span>
+            <span>AI tutor with built-in guardrails</span>
           </div>
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-[#1E225B]" />
-            <span>100% Student Privacy (Zero Ad Tracking)</span>
+            <span>No ads. We never sell student data</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>Zero Direct-Answer Leak Guarantee</span>
+            <span>Designed not to hand out answers</span>
           </div>
         </div>
       </section>
@@ -381,72 +381,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Social Proof & Testimonials ───────────────────────────────── */}
+      {/* ─── Who it's for ──────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 px-5 sm:px-6 bg-[#FAF9F5]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-xl mx-auto mb-12">
             <span className="text-xs font-bold text-[#1E225B] uppercase tracking-wider">
-              Trusted by Educators &amp; Learners
+              Made for Pakistani classrooms
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1E225B] mt-1">
-              What Our Community Says
+              Who GuruMera is for
             </h2>
+            <p className="text-sm text-slate-600 mt-2">Grade 6 and above. Works in English, Urdu and Roman Urdu.</p>
           </div>
-
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Testimonial 1: Teacher */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1 text-[#F5921D] mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current" />
-                  ))}
-                </div>
-                <p className="text-sm text-slate-700 italic leading-relaxed mb-4">
-                  &ldquo;GuruMera changed the game in AP Physics. Students stopped copying AI answers and started actually understanding the derivations before class.&rdquo;
-                </p>
+            {[
+              { t: 'Tuition teachers', d: 'Set up a class in a minute, share a code, and see how each student works through your questions.' },
+              { t: 'Schools & academies', d: 'A private workspace for your school. Teachers set coursework; parents see progress and can confirm they have reviewed results.' },
+              { t: 'Students', d: 'A tutor that asks the next good question instead of giving the answer, so you learn to solve it yourself.' },
+            ].map((c) => (
+              <div key={c.t} className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
+                <div className="font-bold text-[#1E225B] text-base mb-2">{c.t}</div>
+                <p className="text-sm text-slate-600 leading-relaxed">{c.d}</p>
               </div>
-              <div className="pt-4 border-t border-slate-100">
-                <div className="font-bold text-[#1E225B] text-sm">Dr. Elena Torres</div>
-                <div className="text-xs text-slate-500">AP Physics Lead, Horizon High</div>
-              </div>
-            </div>
-
-            {/* Testimonial 2: Student */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1 text-[#F5921D] mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current" />
-                  ))}
-                </div>
-                <p className="text-sm text-slate-700 italic leading-relaxed mb-4">
-                  &ldquo;Instead of feeling stuck or just reading an answer key, the Socratic hints helped me figure out calculus by myself. The feeling when you solve it yourself is unmatched.&rdquo;
-                </p>
-              </div>
-              <div className="pt-4 border-t border-slate-100">
-                <div className="font-bold text-[#1E225B] text-sm">Marcus K.</div>
-                <div className="text-xs text-slate-500">Independent High School Learner</div>
-              </div>
-            </div>
-
-            {/* Testimonial 3: Administrator */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1 text-[#F5921D] mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current" />
-                  ))}
-                </div>
-                <p className="text-sm text-slate-700 italic leading-relaxed mb-4">
-                  &ldquo;The multi-tenant school onboarding took less than 10 minutes, and the audit logs give our academic board full compliance confidence.&rdquo;
-                </p>
-              </div>
-              <div className="pt-4 border-t border-slate-100">
-                <div className="font-bold text-[#1E225B] text-sm">David Chen</div>
-                <div className="text-xs text-slate-500">Academy EdTech Director</div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>

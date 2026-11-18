@@ -1,7 +1,12 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
 import { Roles, CurrentUser } from '../auth/decorators';
 import { ParentService } from './parent.service';
+
+class AcknowledgeDto {
+  @IsOptional() @IsString() @MaxLength(500) note?: string;
+}
 
 /**
  * Authenticated Parent Portal endpoints.
@@ -101,5 +106,17 @@ export class ParentController {
   @Roles('PARENT')
   async getProfile(@CurrentUser() user: any) {
     return this.parentService.getProfile(user);
+  }
+
+  /** POST /parent/children/:studentId/submissions/:submissionId/acknowledge — confirm the result was reviewed. */
+  @Post('children/:studentId/submissions/:submissionId/acknowledge')
+  @Roles('PARENT')
+  async acknowledge(
+    @CurrentUser() user: any,
+    @Param('studentId', new ParseUUIDPipe()) studentId: string,
+    @Param('submissionId', new ParseUUIDPipe()) submissionId: string,
+    @Body() dto: AcknowledgeDto,
+  ) {
+    return this.parentService.acknowledgeSubmission(user, studentId, submissionId, dto.note);
   }
 }

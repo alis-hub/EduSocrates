@@ -67,6 +67,8 @@ export default function AuthenticatedParentPortal() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [children, setChildren] = useState<LinkedChild[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
+  const [ackNote, setAckNote] = useState('');
+  const [ackBusy, setAckBusy] = useState(false);
   const [activeTab, setActiveTab] = useState<ParentTab>('overview');
   const [loading, setLoading] = useState(true);
 
@@ -1028,6 +1030,48 @@ export default function AuthenticatedParentPortal() {
                 </div>
               )}
             </div>
+
+            {viewingAssignment.submission_status === 'GRADED' && viewingAssignment.submission_id && (
+              <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
+                {viewingAssignment.acknowledged_at ? (
+                  <div className="text-emerald-700 font-semibold">
+                    ✓ You acknowledged this result on {new Date(viewingAssignment.acknowledged_at).toLocaleDateString()}
+                  </div>
+                ) : (
+                  <>
+                    <textarea
+                      value={ackNote}
+                      onChange={(e) => setAckNote(e.target.value)}
+                      maxLength={500}
+                      rows={2}
+                      placeholder="Optional note to the teacher"
+                      className="w-full border border-slate-200 rounded-xl p-2 text-xs"
+                    />
+                    <button
+                      type="button"
+                      disabled={ackBusy}
+                      onClick={async () => {
+                        setAckBusy(true);
+                        try {
+                          const r = await api.acknowledgeResult(selectedChild.student_id, viewingAssignment.submission_id, ackNote.trim() || undefined);
+                          const patch = { acknowledged_at: r.acknowledged_at || new Date().toISOString() };
+                          setViewingAssignment({ ...viewingAssignment, ...patch });
+                          setCoursework((prev) => prev.map((c) => (c.submission_id === viewingAssignment.submission_id ? { ...c, ...patch } : c)));
+                          setAckNote('');
+                        } catch (e: any) {
+                          alert(e?.message || 'Could not save your acknowledgement.');
+                        } finally {
+                          setAckBusy(false);
+                        }
+                      }}
+                      className="bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl disabled:opacity-50"
+                    >
+                      I have reviewed this result
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end">
               <button

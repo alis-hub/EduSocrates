@@ -62,11 +62,11 @@ const PARENT_FAQS = [
   },
   {
     q: 'Does GuruMera provide direct homework answers or solve problems for students?',
-    a: 'No. GuruMera operates under strict 5-layer pedagogical guardrails. When a student pastes a homework question or test prompt, the AI provides diagnostic clues, analogies, and small numerical toy problems—guiding the student to deduce the solution themselves without ever leaking raw formulas or final answer keys.',
+    a: 'No. GuruMera is designed to guide, not to answer. When a student pastes a homework question, the tutor asks guiding questions and offers small examples so the student works out the solution themselves. Teachers can also mark the correct answer so the tutor is blocked from stating it.',
   },
   {
-    q: 'How does GuruMera protect student privacy and school compliance?',
-    a: 'GuruMera implements strict FERPA and COPPA compliant safeguards. Data is isolated per school tenant using database-level Row-Level Security (RLS). Student data is never sold or used for public AI model training.',
+    q: 'How does GuruMera protect student privacy?',
+    a: 'Each school\'s data is kept separate from every other school\'s at the database level. Only your child\'s school and the parents linked to them can see their results, and we do not sell student data or show ads.',
   },
   {
     q: 'Can parents create accounts independently without a school invitation?',
@@ -356,7 +356,7 @@ export default function ParentsLandingPage() {
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2.5">
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div className="leading-relaxed">
-              <strong className="text-slate-800">Safe Invitation Guarantee:</strong> Opening an invitation link
+              <strong className="text-slate-800">Safe invitation:</strong> Opening an invitation link
               validates token authenticity only. The invitation is <strong>never accepted automatically</strong> merely
               because the page was opened. Account activation occurs only after you verify your details and establish your password.
             </div>

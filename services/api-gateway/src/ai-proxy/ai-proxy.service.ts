@@ -1,13 +1,21 @@
-import { Injectable, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
+import { aiGatewayHeaders } from '../common/security';
+import { assertCanManageCoursework } from '../common/teaching-access';
 import type { Response } from 'express';
 import * as http from 'http';
 import * as https from 'https';
 
 const QUOTA_LIMIT = 15;
 const QUOTA_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function envInt(v: string | undefined, fallback: number): number {
+  const n = Number.parseInt(v ?? '', 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
 
 @Injectable()
 export class AiProxyService {
@@ -26,6 +34,10 @@ export class AiProxyService {
 
   getAiGatewayUrl(): string {
     return this.aiGatewayUrl;
+  }
+
+  getAiGatewayHeaders(): Record<string, string> {
+    return aiGatewayHeaders(this.config);
   }
 
   async startSession(user: any, courseworkId: string) {
@@ -68,7 +80,7 @@ export class AiProxyService {
     try {
       response = await fetch(`${this.aiGatewayUrl}/api/v1/ai/session/start`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...aiGatewayHeaders(this.config) },
         body: JSON.stringify(payload),
       });
     } catch (err: any) {
@@ -102,9 +114,35 @@ export class AiProxyService {
     return { ...data, subjectId: cw.subject_id };
   }
 
+  /**
+   * Cost control. Three layers, all enforced before the AI is called:
+   *  1. per student, per hour, across ALL subjects (the subjectId in the request is client-supplied,
+   *     so a per-subject counter alone can be dodged by sending a different value each time);
+   *  2. per student, per subject, per hour (pacing);
+   *  3. per school/academy, per day (a runaway or abusive tenant cannot drain the shared AI budget).
+   */
   async checkAndDecrementQuota(schoolId: string, studentId: string, subjectId: string) {
-    const key = `quota:${schoolId}:${studentId}:${subjectId}`;
-    await this.redisService.checkAndIncrementQuota(key, QUOTA_WINDOW_MS, QUOTA_LIMIT);
+    const perStudentHour = envInt(this.config.get('STUDENT_HOURLY_AI_LIMIT'), 40);
+    await this.redisService.checkAndIncrementQuota(
+      `quota:stu-h:${schoolId}:${studentId}`, QUOTA_WINDOW_MS, perStudentHour,
+      'You have reached the hourly limit for AI help. Take a short break and try again.',
+    );
+    await this.redisService.checkAndIncrementQuota(
+      `quota:${schoolId}:${studentId}:${String(subjectId).slice(0, 64)}`, QUOTA_WINDOW_MS, QUOTA_LIMIT,
+    );
+
+    const t = await this.db.queryWithTenant(schoolId, `SELECT tenant_type FROM schools WHERE id = $1`, [schoolId]);
+    const type = t[0]?.tenant_type;
+    const dayLimit =
+      type === 'TUTOR' ? envInt(this.config.get('TUTOR_DAILY_AI_LIMIT'), 1500)
+      : type === 'HUB' ? Number.MAX_SAFE_INTEGER // the Hub has its own global cap
+      : envInt(this.config.get('SCHOOL_DAILY_AI_LIMIT'), 6000);
+    if (dayLimit !== Number.MAX_SAFE_INTEGER) {
+      await this.redisService.checkAndIncrementQuota(
+        `quota:tenant-d:${schoolId}`, DAY_MS, dayLimit,
+        'Your school has reached its daily AI limit. It resets tomorrow; please contact your teacher.',
+      );
+    }
   }
 
   /** Generic SSE proxy helper for stateless AI Gateway streaming endpoints (Public Hub & Sandbox). */
@@ -127,6 +165,7 @@ export class AiProxyService {
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(body),
+          ...aiGatewayHeaders(this.config),
         },
       },
       (proxyRes) => {
@@ -141,6 +180,17 @@ export class AiProxyService {
     });
     req.write(body);
     req.end();
+  }
+
+  /** True only if this session was started by this user inside their own tenant. */
+  async assertSessionOwner(schoolId: string, studentId: string, sessionId: string): Promise<void> {
+    const rows = await this.db.queryWithTenant(
+      schoolId,
+      `SELECT 1 FROM ai_tutoring_sessions
+       WHERE id = $1 AND school_id = $2 AND student_id = $3 AND session_status = 'ACTIVE'`,
+      [sessionId, schoolId, studentId],
+    );
+    if (!rows.length) throw new NotFoundException('Session not found');
   }
 
   async proxyStream(
@@ -169,7 +219,11 @@ export class AiProxyService {
         port: url.port || (url.protocol === 'https:' ? 443 : 80),
         path: url.pathname,
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+          ...aiGatewayHeaders(this.config),
+        },
       },
       (proxyRes) => {
         let buffer = '';
@@ -287,37 +341,41 @@ export class AiProxyService {
     return { school_id: schoolId, total_entries: mapped.length, entries: mapped };
   }
 
-  async getSessionMessages(sessionId: string) {
-    try {
-      const response = await fetch(
-        `${this.aiGatewayUrl}/api/v1/ai/sessions/${sessionId}/messages`,
-      );
-      if (response.ok) {
-        const data = (await response.json()) as any;
-        if (data?.messages?.length > 0) return data;
-      }
-    } catch { /* fall through to DB */ }
+  /** Messages of one session, only if it belongs to the caller's own school. */
+  async getSessionMessages(schoolId: string, sessionId: string, viewer?: { id: string; role: string }) {
+    const owned = await this.db.queryWithTenant(
+      schoolId,
+      `SELECT coursework_id FROM ai_tutoring_sessions WHERE id = $1 AND school_id = $2`,
+      [sessionId, schoolId],
+    );
+    if (!owned.length) throw new NotFoundException('Session not found');
 
-    try {
-      const messages = await this.db.query(
-        `SELECT sender_type, content, created_at
-         FROM ai_tutoring_messages
-         WHERE session_id = $1
-         ORDER BY created_at ASC`,
-        [sessionId],
+    // Teachers may only open transcripts of coursework they manage, and every view is logged.
+    if (viewer) {
+      if (!owned[0].coursework_id) throw new ForbiddenException('This session is not linked to your coursework.');
+      await assertCanManageCoursework(this.db, { id: viewer.id, role: viewer.role, schoolId }, owned[0].coursework_id);
+      await this.db.queryWithTenant(
+        schoolId,
+        `INSERT INTO transcript_access_log (school_id, viewer_id, session_id, coursework_id) VALUES ($1,$2,$3,$4)`,
+        [schoolId, viewer.id, sessionId, owned[0].coursework_id],
       );
-      if (messages && messages.length > 0) {
-        return {
-          session_id: sessionId,
-          messages: messages.map((m: any) => ({
-            role: m.sender_type === 'STUDENT' ? 'user' : 'assistant',
-            content: m.content,
-          })),
-          source: 'database',
-        };
-      }
-    } catch { /* ignore */ }
+    }
 
-    return { session_id: sessionId, messages: [], source: 'db_fallback', expired: true };
+    const messages = await this.db.queryWithTenant(
+      schoolId,
+      `SELECT sender_type, content, created_at
+       FROM ai_tutoring_messages
+       WHERE session_id = $1
+       ORDER BY created_at ASC`,
+      [sessionId],
+    );
+    return {
+      session_id: sessionId,
+      messages: messages.map((m: any) => ({
+        role: m.sender_type === 'STUDENT' ? 'user' : 'assistant',
+        content: m.content,
+      })),
+      source: 'database',
+    };
   }
 }

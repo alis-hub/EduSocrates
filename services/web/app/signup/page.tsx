@@ -5,6 +5,7 @@ import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { GoogleSignInButton, googleSignInEnabled } from '@/components/GoogleSignInButton';
 import { BrandLogo } from '@/components/BrandLogo';
 import { LandingModals, ModalType } from '@/components/LandingModals';
 import {
@@ -100,7 +101,6 @@ export default function SignupPage() {
   const [infoMsg, setInfoMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [activeLegalModal, setActiveLegalModal] = useState<ModalType>(null);
-  const [ssoModal, setSsoModal] = useState<'google' | 'linkedin' | 'microsoft' | null>(null);
 
   const pwdStrength = evaluatePasswordStrength(password);
 
@@ -131,30 +131,24 @@ export default function SignupPage() {
           setSubmitting(false);
           return;
         }
-        // First register public learner then redeem code, or redeem directly
-        await api.publicSignup({ email, password, firstName, lastName });
-        const res = await api.redeemInvite(inviteCode.trim());
-        setInfoMsg(`Successfully enrolled in ${res.schoolName}! Redirecting...`);
+        const res = await api.joinClass({ code: inviteCode.trim(), email, password, firstName, lastName });
+        setInfoMsg(`Joined ${res.joined?.className || 'your class'} at ${res.joined?.schoolName || 'your school'}! Redirecting...`);
         setTimeout(() => {
           window.location.href = '/student';
         }, 1000);
       } else if (selectedRole === 'TEACHER') {
-        // Teacher registration flow
-        await api.publicSignup({ email, password, firstName, lastName });
-        setInfoMsg('Faculty account created. Pending institutional subject allocation. Redirecting to workspace...');
-        setTimeout(() => {
-          window.location.href = '/teacher';
-        }, 1200);
+        window.location.href = '/start/teacher';
+        return;
       } else if (selectedRole === 'PARENT') {
-        if (!parentToken.trim()) {
-          setError('Please enter your school-issued parent invitation code or use the demo sandbox.');
+        // Parents join through the personal invitation link their school sends them.
+        const tok = parentToken.trim().split('/').pop() || '';
+        if (!tok) {
+          setError('Paste the invitation link or code your school sent you.');
           setSubmitting(false);
           return;
         }
-        setInfoMsg('Parent link verified. Redirecting to your family dashboard...');
-        setTimeout(() => {
-          window.location.href = '/parent';
-        }, 1000);
+        window.location.href = `/parent/invitation/${encodeURIComponent(tok)}`;
+        return;
       }
     } catch (err: any) {
       setError(err?.message || 'Unable to complete registration. Please try again.');
@@ -162,29 +156,18 @@ export default function SignupPage() {
     }
   }
 
-  async function handleSsoAction(provider: 'google' | 'linkedin' | 'microsoft', ssoEmail: string, ssoName?: string) {
+  async function handleGoogleCredential(idToken: string) {
     setError('');
     setInfoMsg('');
     setSubmitting(true);
     try {
-      const parts = (ssoName || '').split(' ');
-      const res = await api.ssoLogin({
-        provider,
-        email: ssoEmail,
-        firstName: parts[0] || 'User',
-        lastName: parts.slice(1).join(' ') || 'Learner',
-      });
-      setSsoModal(null);
-      if (res.tenantRouted) {
-        setInfoMsg(`Connected with ${provider.toUpperCase()}. Mapped to your verified academy. Redirecting...`);
-      } else {
-        setInfoMsg('Connected to Universal Public Learning Hub. Redirecting...');
-      }
+      await api.ssoLogin({ provider: 'google', idToken });
+      setInfoMsg('Signed in with Google. Redirecting...');
       setTimeout(() => {
-        window.location.href = res.tenantRouted ? '/student' : '/hub';
-      }, 800);
+        window.location.href = '/hub';
+      }, 600);
     } catch (err: any) {
-      setError(err.message || 'SSO authentication failed.');
+      setError(err.message || 'Google sign-in failed.');
       setSubmitting(false);
     }
   }
@@ -348,11 +331,11 @@ export default function SignupPage() {
               </div>
               <h3 className="font-bold text-sm text-[#1E225B]">Register a School</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Set up a complete multi-campus digital academy. Configure academic years, grade sections, faculty rosters, and CSV imports.
+                Create your school's workspace in a minute. Add teachers, classes and students afterwards.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-purple-700">
-              <span>6-Step Guided Onboarding</span>
+              <span>Quick setup</span>
               {selectedRole === 'SCHOOL_ADMIN' && <Check className="w-4 h-4" />}
             </div>
           </button>
@@ -403,14 +386,14 @@ export default function SignupPage() {
                 Register Your School or Academy
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto">
-                Setting up an institution creates an isolated multi-tenant organization in PostgreSQL with FERPA &amp; COPPA compliance, custom campus domains, and administrator credentials.
+                Create a private workspace for your school or academy with an administrator account. Teachers and students join with simple class codes.
               </p>
               <div className="pt-2">
                 <Link
-                  href="/schools"
+                  href="/start/school"
                   className="inline-flex items-center gap-2 bg-[#1E225B] hover:bg-[#141740] text-white font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-md"
                 >
-                  <span>Launch School Onboarding Wizard</span>
+                  <span>Set up my school</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -484,59 +467,18 @@ export default function SignupPage() {
                 <p className="text-xs text-slate-500 mt-1">
                   {selectedRole === 'INDEPENDENT' && 'Enjoy free, unrestricted access to the 7-tool Socratic Learning Hub.'}
                   {selectedRole === 'STUDENT_CODE' && 'Enter your school invite code to synchronize classes and assignments.'}
-                  {selectedRole === 'TEACHER' && 'Use your school email domain (@horizon.edu) for automatic campus mapping.'}
+                  {selectedRole === 'TEACHER' && 'Your school will give you an invite code to join its classes.'}
                 </p>
               </div>
 
-              {/* SSO Shortcut Options (Google, Microsoft & LinkedIn) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-6">
-                {/* Google */}
-                <button
-                  type="button"
-                  onClick={() => setSsoModal('google')}
-                  disabled={submitting}
-                  className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-3 rounded-xl border border-slate-300 text-xs shadow-2xs transition-all disabled:opacity-60"
-                >
-                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                  </svg>
-                  <span>Google</span>
-                </button>
-
-                {/* Microsoft */}
-                <button
-                  type="button"
-                  onClick={() => setSsoModal('microsoft')}
-                  disabled={submitting}
-                  className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-3 rounded-xl border border-slate-300 text-xs shadow-2xs transition-all disabled:opacity-60"
-                >
-                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 21 21">
-                    <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
-                    <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
-                    <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
-                    <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
-                  </svg>
-                  <span>Microsoft</span>
-                </button>
-
-                {/* LinkedIn */}
-                <button
-                  type="button"
-                  onClick={() => setSsoModal('linkedin')}
-                  disabled={submitting}
-                  className="flex items-center justify-center gap-2 bg-[#0A66C2] hover:bg-[#084e96] text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow-2xs transition-all disabled:opacity-60"
-                >
-                  <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
-                    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.53 1.53 0 1 0 0-3.06 1.53 1.53 0 0 0 0 3.06m1.39 9.74v-8.37H5.07v8.37h2.78z"/>
-                  </svg>
-                  <span>LinkedIn</span>
-                </button>
-              </div>
+              {googleSignInEnabled && (
+                <div className="mb-6">
+                  <GoogleSignInButton onCredential={handleGoogleCredential} text="signup_with" />
+                </div>
+              )}
 
               {/* Divider */}
+              {googleSignInEnabled && (
               <div className="relative my-6 flex items-center justify-center">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200" />
@@ -545,6 +487,7 @@ export default function SignupPage() {
                   — OR WITH EMAIL —
                 </span>
               </div>
+              )}
 
               {/* Status messages */}
               {error && (
@@ -703,97 +646,6 @@ export default function SignupPage() {
           )}
         </div>
       </main>
-
-      {/* ─── Interactive SSO Account Selector Modal ──────────────────────── */}
-      {ssoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-slate-800">
-            <div className="text-center mb-4">
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
-                {ssoModal === 'google' && (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                  </svg>
-                )}
-                {ssoModal === 'microsoft' && (
-                  <svg className="w-5 h-5" viewBox="0 0 21 21">
-                    <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
-                    <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
-                    <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
-                    <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
-                  </svg>
-                )}
-                {ssoModal === 'linkedin' && (
-                  <svg className="w-5 h-5 fill-[#0A66C2]" viewBox="0 0 24 24">
-                    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.53 1.53 0 1 0 0-3.06 1.53 1.53 0 0 0 0 3.06m1.39 9.74v-8.37H5.07v8.37h2.78z"/>
-                  </svg>
-                )}
-              </div>
-              <h3 className="font-bold text-sm text-[#1E225B]">
-                Register with {ssoModal === 'google' ? 'Google' : ssoModal === 'microsoft' ? 'Microsoft 365' : 'LinkedIn'}
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                Choose an account or school identity to link with GuruMera.
-              </p>
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <button
-                type="button"
-                onClick={() => handleSsoAction(ssoModal, 'alex.chen@horizon.edu', 'Alex Chen')}
-                className="w-full text-left p-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-between"
-              >
-                <div>
-                  <div className="font-bold text-xs text-slate-800">Alex Chen (Student)</div>
-                  <div className="text-[10px] text-slate-500">alex.chen@horizon.edu</div>
-                </div>
-                <span className="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded">
-                  Horizon Academy
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSsoAction(ssoModal, 'teacher.physics@horizon.edu', 'Marcus Vance')}
-                className="w-full text-left p-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-between"
-              >
-                <div>
-                  <div className="font-bold text-xs text-slate-800">Marcus Vance (Teacher)</div>
-                  <div className="text-[10px] text-slate-500">teacher.physics@horizon.edu</div>
-                </div>
-                <span className="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded">
-                  Faculty M365
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSsoAction(ssoModal, 'samira.learner@outlook.com', 'Samira Learner')}
-                className="w-full text-left p-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-between"
-              >
-                <div>
-                  <div className="font-bold text-xs text-slate-800">Samira (Independent)</div>
-                  <div className="text-[10px] text-slate-500">samira.learner@outlook.com</div>
-                </div>
-                <span className="text-[10px] bg-amber-50 text-amber-700 font-semibold px-2 py-0.5 rounded">
-                  Public Hub
-                </span>
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setSsoModal(null)}
-              className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ─── Mini Footer ─────────────────────────────────────────────────── */}
       <footer className="py-6 px-6 text-center text-xs text-slate-500 border-t border-[#E7E3D8]">

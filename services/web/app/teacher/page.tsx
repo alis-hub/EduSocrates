@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react';
 import { api, getStoredUser, logout } from '@/lib/api';
 import { BrandLogo } from '@/components/BrandLogo';
+import { TeacherClassesPanel } from '@/components/TeacherClassesPanel';
 import {
   BookOpen, LogOut, PlusCircle, MessageSquare, CheckSquare2, ChevronLeft,
   ShieldAlert, Star, FileText, Eye, X, Sparkles, Globe, PenTool,
 } from 'lucide-react';
 
-type View = 'list' | 'create' | 'audit' | 'submissions' | 'transcript';
+type View = 'list' | 'classes' | 'create' | 'audit' | 'submissions' | 'transcript';
 
 const GUIDANCE_MODES = [
   { value: 'SOCRATIC_STRICT', label: 'Socratic Strict — guiding questions only' },
@@ -180,11 +181,12 @@ export default function TeacherDashboard() {
         )}
 
         {/* ── Main Tab Nav ─────────────────────────────────────────────────── */}
-        {(view === 'list' || view === 'create' || view === 'audit') && (
+        {(view === 'list' || view === 'classes' || view === 'create' || view === 'audit') && (
           <>
             <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-8 w-fit">
               {[
                 { key: 'list', label: 'My Coursework', icon: CheckSquare2 },
+                { key: 'classes', label: 'My Classes', icon: CheckSquare2 },
                 { key: 'create', label: 'New Coursework', icon: PlusCircle },
                 { key: 'audit', label: 'AI Audit Log', icon: ShieldAlert },
               ].map(({ key, label, icon: Icon }) => (
@@ -224,6 +226,8 @@ export default function TeacherDashboard() {
                 ))}
               </div>
             )}
+
+            {view === 'classes' && <TeacherClassesPanel canCreate={true} />}
 
             {/* ── Create Coursework ───────────────────────────────────────── */}
             {view === 'create' && (
@@ -582,6 +586,11 @@ export default function TeacherDashboard() {
                           {sub.status === 'GRADED' && (
                             <span className="text-sm font-semibold text-emerald-600 flex items-center gap-1">
                               <Star className="w-3.5 h-3.5" />{sub.score}/{selectedCw.max_score}
+                            </span>
+                          )}
+                          {sub.parent_acknowledgements > 0 && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" title={sub.parent_acknowledged_at ? new Date(sub.parent_acknowledged_at).toLocaleString() : ''}>
+                              Parent reviewed
                             </span>
                           )}
                           <span className={`text-xs px-2 py-0.5 rounded-full ${sub.status === 'GRADED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>

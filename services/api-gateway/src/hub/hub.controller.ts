@@ -18,6 +18,8 @@ import {
   IsBoolean,
   IsEmail,
   IsArray,
+  ArrayMaxSize,
+  MaxLength,
   IsNumber,
   IsInt,
   IsObject,
@@ -46,85 +48,6 @@ class SchoolLeadDto {
 
   @IsString()
   roleType!: string;
-}
-
-class OnboardingWizardDto {
-  @IsString()
-  @MinLength(2)
-  schoolName!: string;
-
-  @IsOptional()
-  @IsString()
-  domain?: string;
-
-  @IsEmail()
-  adminEmail!: string;
-
-  @IsString()
-  @MinLength(6)
-  adminPassword!: string;
-
-  @IsString()
-  adminFirstName!: string;
-
-  @IsString()
-  adminLastName!: string;
-
-  @IsString()
-  campusName!: string;
-
-  @IsString()
-  campusCity!: string;
-
-  @IsString()
-  className!: string;
-
-  @IsOptional()
-  @IsString()
-  academicYear?: string;
-
-  @IsOptional()
-  @IsString()
-  sectionName?: string;
-
-  @IsString()
-  subjectName!: string;
-
-  @IsOptional()
-  @IsString()
-  inviteCode?: string;
-
-  @IsOptional()
-  @IsString()
-  secondaryCampusName?: string;
-
-  @IsOptional()
-  @IsString()
-  secondaryCampusCity?: string;
-
-  @IsOptional()
-  @IsString()
-  brandingColor?: string;
-
-  @IsOptional()
-  @IsString()
-  subdomain?: string;
-
-  @IsOptional()
-  @IsString()
-  aiGuidanceMode?: string;
-
-  @IsOptional()
-  @IsString()
-  retentionPolicy?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  ssoGoogle?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  ssoMicrosoft?: boolean;
 }
 
 class UpdateTeacherSandboxDto {
@@ -156,9 +79,11 @@ class SimulateTeacherSandboxDto {
 
 class SandboxStreamDto {
   @IsString()
+  @MaxLength(200)
   topic!: string;
 
   @IsString()
+  @MaxLength(2000)
   message!: string;
 
   @IsOptional()
@@ -171,6 +96,7 @@ class SandboxStreamDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(24)
   history?: Array<{ role: string; content: string }>;
 
   @IsOptional()
@@ -180,12 +106,15 @@ class SandboxStreamDto {
 
 class CodeDebugDto {
   @IsString()
+  @MaxLength(50)
   language!: string;
 
   @IsString()
+  @MaxLength(8000)
   code!: string;
 
   @IsString()
+  @MaxLength(2000)
   question!: string;
 
   @IsOptional()
@@ -194,6 +123,7 @@ class CodeDebugDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(24)
   history?: Array<{ role: string; content: string }>;
 
   @IsOptional()
@@ -407,11 +337,6 @@ export class HubController {
     return this.hubService.createSchoolLead(dto);
   }
 
-  @Post('onboarding/wizard')
-  onboardingWizard(@Body() dto: OnboardingWizardDto) {
-    return this.hubService.onboardingWizard(dto);
-  }
-
   // 2-Hour Ephemeral Teacher Sandbox
   @Post('sandbox/teacher/start')
   startTeacherSandbox() {
@@ -588,10 +513,14 @@ export class HubController {
     return this.hubService.getWhiteboardRoom(roomId, user);
   }
 
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Put('hub/whiteboard/:roomId')
-  updateWhiteboardState(@Param('roomId') roomId: string, @Body() dto: UpdateWhiteboardDto) {
-    return this.hubService.updateWhiteboardState(roomId, dto.canvasState);
+  updateWhiteboardState(
+    @Param('roomId') roomId: string,
+    @Body() dto: UpdateWhiteboardDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.hubService.updateWhiteboardState(roomId, dto.canvasState, user);
   }
 
   // Gamification
@@ -599,11 +528,5 @@ export class HubController {
   @Get('hub/gamification/profile')
   getGamificationProfile(@CurrentUser() user: AuthUser) {
     return this.hubService.getGamificationProfile(user.id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('hub/gamification/record-activity')
-  recordActivity(@Body() dto: RecordActivityDto, @CurrentUser() user: AuthUser) {
-    return this.hubService.recordActivity(user.id, dto.xpDelta ?? 10, dto.badgeCode);
   }
 }

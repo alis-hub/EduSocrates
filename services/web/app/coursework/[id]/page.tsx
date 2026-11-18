@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { api, getApiBaseUrl, getToken } from '@/lib/api';
+import { api, getApiBaseUrl } from '@/lib/api';
 import { KaTeXMath } from '@/components/KaTeXMath';
 import { ArrowLeft, BookOpen, Send, Sparkles } from 'lucide-react';
 
@@ -33,12 +33,11 @@ export default function SharedCourseworkPage() {
     setStreaming(true);
 
     try {
-      const token = getToken();
       const res = await fetch(`${getApiBaseUrl()}/hub/sandbox/stream`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           topic: `${cw.subject_name}: ${cw.title}`,
