@@ -41,6 +41,7 @@ export class EmailService {
         headers: { 'api-key': key, 'content-type': 'application/json', accept: 'application/json' },
         body: JSON.stringify({
           sender: { name: this.config.get('EMAIL_FROM_NAME') || 'GuruMera', email: this.config.get('EMAIL_FROM') || 'no-reply@gurumera.com' },
+          replyTo: { email: this.config.get('EMAIL_REPLY_TO') || 'info@gurumera.com' },
           to: [{ email: mail.to, ...(mail.toName ? { name: mail.toName } : {}) }],
           subject: mail.subject,
           htmlContent: mail.html,

@@ -83,7 +83,7 @@ Google Cloud Console, APIs and Services, Credentials, your OAuth Web client:
 
 1. Brevo, Senders and domains, add and **authenticate `gurumera.com`**. Add the SPF, DKIM and DMARC DNS records Brevo shows. Wait until it says verified.
 2. Create an API key (SMTP and API, API keys). This is `BREVO_API_KEY`.
-3. The sender is `no-reply@gurumera.com` (an address on the verified domain). Also make sure the `sales@gurumera.com` mailbox exists.
+3. The sender is `no-reply@gurumera.com` (an address on the verified domain). Also make sure the `info@gurumera.com` mailbox exists.
 
 ## 5. API, AI service and Redis (Render)
 

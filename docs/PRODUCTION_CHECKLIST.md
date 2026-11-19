@@ -37,7 +37,7 @@ Apply in this order. Never re-run `002_v230_public_hub.sql` after 004 (it re-ope
 - Smoke test after deploy: sign in as the new super admin (MFA enrol), create a school via /start/school, a tutor via /start/teacher, join via /join
 
 ## 4. Still open before launch
-- Make sure the mailbox sales@gurumera.com exists and is monitored (pricing page, contact pop-up and schools page all point to it); leads from the schools form appear in the super-admin page
+- Make sure the mailbox info@gurumera.com exists and is monitored (pricing page, contact pop-up and schools page all point to it); leads from the schools form appear in the super-admin page
 - Brevo setup: verify the gurumera.com sending domain (SPF, DKIM, DMARC DNS records) and send yourself a test reset email before launch; unauthenticated domains land in spam
 - Emails are sent but sign-in is not blocked for unverified addresses (by design for now)
 - Sessions are now HttpOnly cookies: web and API must share the parent domain (gurumera.com and api.gurumera.com); set COOKIE_DOMAIN=.gurumera.com on the API
