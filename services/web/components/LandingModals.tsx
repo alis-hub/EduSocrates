@@ -168,7 +168,7 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
                 <div className="border-2 border-[#1E225B] rounded-2xl p-5 bg-[#FAF9F5] shadow-xs">
                   <span className="text-xs font-bold text-[#F5921D] uppercase tracking-wider">Schools, Academies &amp; Tutors</span>
                   <h4 className="text-xl font-black text-[#1E225B] mt-1">Schools &amp; Teachers</h4>
-                  <p className="text-xs text-slate-500 mt-1 mb-4">Contact sales for pricing: sales@gurumera.com</p>
+                  <p className="text-xs text-slate-500 mt-1 mb-4">Contact us for pricing: info@gurumera.com</p>
                   <ul className="text-xs space-y-2 text-slate-600">
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Classes, sections and rosters with class codes</li>
                     <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Coursework-Linked Rubrics &amp; AI Strictness</li>
@@ -188,10 +188,10 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
                 For school or academy pricing, a demo, or any question, email us and we will reply as soon as we can.
               </p>
               <a
-                href="mailto:sales@gurumera.com?subject=GuruMera%20enquiry"
+                href="mailto:info@gurumera.com?subject=GuruMera%20enquiry"
                 className="inline-flex items-center gap-2 bg-[#1E225B] hover:bg-[#141740] text-white font-bold px-5 py-3 rounded-xl text-sm"
               >
-                <Mail className="w-4 h-4" /> sales@gurumera.com
+                <Mail className="w-4 h-4" /> info@gurumera.com
               </a>
               <p className="text-xs text-slate-500">
                 Please include your school or academy name, your city and roughly how many students you teach.

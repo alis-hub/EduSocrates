@@ -148,10 +148,10 @@ export default function PricingPage() {
 
             <div className="mt-8 pt-6 border-t border-slate-100">
               <a
-                href="mailto:sales@gurumera.com?subject=GuruMera%20pricing%20enquiry"
+                href="mailto:info@gurumera.com?subject=GuruMera%20pricing%20enquiry"
                 className="w-full inline-flex items-center justify-center gap-2 bg-[#1E225B] hover:bg-[#141740] text-white font-bold py-3 rounded-xl text-sm transition-all shadow-md"
               >
-                <GraduationCap className="w-4 h-4" /> Email sales@gurumera.com
+                <GraduationCap className="w-4 h-4" /> Email info@gurumera.com
               </a>
               <Link href="/start/school" className="block text-center text-xs text-[#1E225B] font-semibold mt-3 hover:underline">
                 Or set up your school or class first
@@ -176,7 +176,7 @@ export default function PricingPage() {
             <div>
               <h4 className="font-bold text-[#1E225B]">How much does it cost for a school or academy?</h4>
               <p className="mt-1 text-slate-600 leading-relaxed">
-                Pricing depends on the size of your school or class. Email sales@gurumera.com with your school name and number of students and we will reply with a quote.
+                Pricing depends on the size of your school or class. Email info@gurumera.com with your school name and number of students and we will reply with a quote.
               </p>
             </div>
           </div>
