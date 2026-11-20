@@ -82,6 +82,7 @@ export const api = {
       method: 'POST', body: JSON.stringify({ token }),
     }),
 
+  me: () => apiFetch<{ id: string; email: string; role: string; emailVerified: boolean }>('/auth/me'),
   resendVerification: () =>
     apiFetch<{ success: boolean; message: string }>('/auth/resend-verification', { method: 'POST' }),
 

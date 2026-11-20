@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     # LLM Settings
     DEFAULT_PROVIDER: str = "mock"  # "mock", "gemini", "openai"
     GEMINI_API_KEY: Optional[str] = None
+    # Google retires models; keep the name in configuration, not in code.
+    GEMINI_MODEL: str = "gemini-2.5-flash"
     OPENAI_API_KEY: Optional[str] = None
     LLM_TEMPERATURE: float = 0.3
 
