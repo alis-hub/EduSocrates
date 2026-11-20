@@ -81,7 +81,11 @@ export function LandingModals({ activeModal, onClose }: LandingModalsProps) {
               <p>
                 GuruMera is for students in Grade 6 and above. A school or a parent should set up accounts for younger teenagers.
               </p>
-              <h4 className="font-bold text-[#1E225B]">6. Your choices</h4>
+              <h4 className="font-bold text-[#1E225B]">6. How long we keep it</h4>
+              <p>
+                We keep your account information, coursework and AI tutor conversations for as long as your account or your school&apos;s workspace exists, so that teachers and parents can review progress. We may introduce time limits as GuruMera grows and will update this page when we do. When an account or a workspace is deleted, its data is deleted too.
+              </p>
+              <h4 className="font-bold text-[#1E225B]">7. Your choices</h4>
               <p>
                 To see, correct or delete your data, contact your school administrator or write to us using the Contact option. Schools can ask us to delete their workspace.
               </p>

@@ -82,7 +82,7 @@ async def gemini_stream(system_prompt: str, messages: List[Dict], temperature: f
             "stopSequences": [],
         },
     }
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key={settings.GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:streamGenerateContent?alt=sse&key={settings.GEMINI_API_KEY}"
 
     async with httpx.AsyncClient(timeout=60) as client:
         async with client.stream("POST", url, json=payload) as response:
@@ -179,7 +179,7 @@ async def generate_llm_text(
             "systemInstruction": {"parts": [{"text": system_prompt}]},
             "generationConfig": gen_cfg,
         }
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={settings.GEMINI_API_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={settings.GEMINI_API_KEY}"
         try:
             async with httpx.AsyncClient(timeout=45) as client:
                 resp = await client.post(url, json=payload)

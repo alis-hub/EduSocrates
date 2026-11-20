@@ -52,6 +52,7 @@ services:
       - { key: AES_ENCRYPTION_KEY, generateValue: true }
       - { key: REDIS_URL, fromService: { type: keyvalue, name: gurumera-redis, property: connectionString } }
       - { key: DEFAULT_PROVIDER, value: gemini }    # or openai; "mock" returns canned replies
+      - { key: GEMINI_MODEL, value: gemini-2.5-flash }   # change here when Google retires a model
       - { key: GEMINI_API_KEY, sync: false }
       - { key: OPENAI_API_KEY, sync: false }
       - { key: LLM_TEMPERATURE, value: "0.3" }

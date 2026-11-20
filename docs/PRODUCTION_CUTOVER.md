@@ -99,7 +99,7 @@ Google Cloud Console, APIs and Services, Credentials, your OAuth Web client:
    | gurumera-api | `GOOGLE_CLIENT_ID` | from step 3 |
    | gurumera-api | `BREVO_API_KEY` | from step 4 |
    | gurumera-ai | `AI_GATEWAY_API_KEY` | **exactly the same value** as on the API |
-   | gurumera-ai | `GEMINI_API_KEY` or `OPENAI_API_KEY` | your AI provider key (and `DEFAULT_PROVIDER` to match) |
+   | gurumera-ai | `GEMINI_API_KEY` or `OPENAI_API_KEY` | your AI provider key (and `DEFAULT_PROVIDER` to match). For Gemini use a key from a project with billing switched on (paid tier): Google's free tier may use submitted content to improve its products, and students' messages should not go there. The model name is `GEMINI_MODEL` (default `gemini-2.5-flash`); change it on Render when Google retires a model. |
 
 3. Apply the blueprint and wait until both services show **Live**. Check `https://<your-render-url>/api/v1/health` returns `{"status":"ok"}`.
 4. On `gurumera-api`, Settings, **Custom Domains**, add `api.gurumera.com`. Render shows a DNS target.

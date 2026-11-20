@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, UseGuards, Res, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, HttpCode, UseGuards, Res, Req } from '@nestjs/common';
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { SESSION_COOKIE, readCookie, sessionCookieOptions } from '../common/security';
@@ -102,6 +102,12 @@ export class AuthController {
     const { maxAge, ...opts } = sessionCookieOptions(this.config, 0);
     res.clearCookie(SESSION_COOKIE, opts);
     return { success: true };
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@CurrentUser() user: any) {
+    return this.authService.me(user.id);
   }
 
   @Post('reset-password')

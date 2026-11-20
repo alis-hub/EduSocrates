@@ -79,8 +79,17 @@ export class AuthService {
         lastName: user.last_name,
         schoolId: user.school_id,
         campusId: user.campus_id,
+        emailVerified: !!user.email_verified_at,
       },
     };
+  }
+
+  /** The signed-in person's basic profile; the web app uses it to show the unverified-email banner. */
+  async me(userId: string) {
+    const rows = await this.db.query(`SELECT id, email, first_name, last_name, role, email_verified_at FROM users WHERE id = $1 AND is_active = TRUE`, [userId]);
+    const u = rows[0];
+    if (!u) throw new UnauthorizedException('Please sign in again.');
+    return { id: u.id, email: u.email, firstName: u.first_name, lastName: u.last_name, role: u.role, emailVerified: !!u.email_verified_at };
   }
 
   private signTemp(userId: string, typ: 'mfa' | 'mfa_setup') {

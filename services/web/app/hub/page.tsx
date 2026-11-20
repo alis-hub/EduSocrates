@@ -1818,7 +1818,7 @@ export default function PublicLearningHubPage() {
                   You&apos;re on a roll! 🔥
                 </h3>
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Sign up with Google to save your learning streak, sync flashcards, and unlock unlimited AI tutoring.
+                  Sign up with Google to save your learning streak, sync flashcards, and ask the AI tutor many more questions each hour.
                 </p>
               </div>
               <button onClick={() => setSignupModalOpen(false)} className="text-slate-400 hover:text-slate-700 p-1">
@@ -1832,13 +1832,13 @@ export default function PublicLearningHubPage() {
                 <ShieldCheck className="w-4 h-4 text-[#249EA0]" /> Free Tier Allowance Rules
               </div>
               <p className="text-[11px] leading-relaxed">
-                • <strong>What counts:</strong> Interactive prompts to the Socratic AI Tutor &amp; Code Debugger (3 queries allowed per 24 hours).
+                • <strong>What counts:</strong> Questions to the Socratic AI Tutor &amp; Code Debugger. Without an account you can ask 3 per hour; with a free account up to 80 per hour.
               </p>
               <p className="text-[11px] leading-relaxed">
-                • <strong>What is unlimited:</strong> Knowledge Maps, Public Flashcards, Practice Quizzes, STEM Grapher, and Discussions are free to use.
+                • <strong>Always free:</strong> Knowledge Maps, Public Flashcards, Practice Quizzes, STEM Grapher, and Discussions.
               </p>
               <p className="text-[11px] leading-relaxed">
-                • <strong>Reset time:</strong> Allowance resets every 24 hours, or create a free account right now to continue immediately.
+                • <strong>Reset time:</strong> The allowance refreshes every hour, or create a free account to continue right away.
               </p>
             </div>
 
@@ -1908,6 +1908,9 @@ export default function PublicLearningHubPage() {
               >
                 Create Free Account
               </button>
+              <p className="text-[10px] text-slate-500 text-center leading-relaxed">
+                GuruMera is for learners in Grade 6 and above. By creating an account you agree to the Terms and Privacy Policy (see the footer of the home page).
+              </p>
             </form>
             <div className="text-center text-xs text-slate-500 pt-1">
               Already have an account?{' '}
